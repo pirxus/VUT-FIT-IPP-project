@@ -124,6 +124,12 @@ class Parser {
                     return 1;
                 }
 
+                // Check the operand format
+                if (!$this->check_var($line[1]) or !$this->check_symb($line[2])) {
+                    $this->body_ok = 23;
+                    return 1;
+                }
+
             // CREATEFRAME PUSHFRAME POPFRAME RET BREAK
             } else if (preg_match($oc_frame_ret_break, $opcode)) {
                 if (count($line) != 1) {
@@ -141,6 +147,12 @@ class Parser {
                     $this->body_ok = 23;
                     return 1;
                 }
+                
+                // Check the operand format
+                if (!$this->check_var($line[1])) {
+                    $this->body_ok = 23;
+                    return 1;
+                }
 
             // PUSHS WRITE EXIT DPRINT symb
             } else if (preg_match($oc_pushs_write_exit_dprint, $opcode)) {
@@ -150,12 +162,24 @@ class Parser {
                     $this->body_ok = 23;
                     return 1;
                 }
+                
+                // Check the operand format
+                if (!$this->check_symb($line[1])) {
+                    $this->body_ok = 23;
+                    return 1;
+                }
 
             // CALL LABEL JUMP label
             } else if (preg_match($oc_call_label_jump, $opcode)) {
                 if (count($line) != 2) {
                     fprintf(STDERR, "error: incorrect argument count on line %d\n",
                         $this->line_number);
+                    $this->body_ok = 23;
+                    return 1;
+                }
+                
+                // Check the operand format
+                if (!$this->check_label($line[1])) {
                     $this->body_ok = 23;
                     return 1;
                 }
@@ -170,6 +194,13 @@ class Parser {
                     return 1;
                 }
 
+                // Check the operand format
+                if (!$this->check_var($line[1]) or !$this->check_symb($line[2])
+                    or !$this->check_symb($line[3])) {
+                    $this->body_ok = 23;
+                    return 1;
+                }
+
             // READ var type
             } else if (preg_match($oc_read, $opcode)) {
                 if (count($line) != 3) {
@@ -179,11 +210,24 @@ class Parser {
                     return 1;
                 }
 
+                // Check the operand formats
+                if (!$this->check_var($line[1]) or !$this->check_type($line[2])) {
+                    $this->body_ok = 23;
+                    return 1;
+                }
+
             // JUMPIFEQ JUMPIFNEQ label symb symb
             } else if (preg_match($oc_jumpif, $opcode)) {
                 if (count($line) != 4) {
                     fprintf(STDERR, "error: incorrect argument count on line %d\n",
                         $this->line_number);
+                    $this->body_ok = 23;
+                    return 1;
+                }
+
+                // Check the operand format
+                if (!$this->check_label($line[1]) or !$this->check_symb($line[2])
+                    or !$this->check_symb($line[3])) {
                     $this->body_ok = 23;
                     return 1;
                 }
@@ -201,6 +245,7 @@ class Parser {
 
     /* Functions used to check the correct format of a variable/symbol/label */
     private function check_var($str) {
+        include 'regex.php';
         if (preg_match($op_var, $str)) {
             return True;
 
@@ -212,7 +257,8 @@ class Parser {
     }
 
     private function check_symb($str) {
-        if (preg_match($op_symb, $str) or preg_match($op_var, $str)) {
+        include 'regex.php';
+        if (preg_match($op_const, $str) or preg_match($op_var, $str)) {
             return True;
 
         } else { 
@@ -223,6 +269,7 @@ class Parser {
     }
 
     private function check_label($str) {
+        include 'regex.php';
         if (preg_match($op_label, $str)) {
             return True;
 
@@ -234,6 +281,7 @@ class Parser {
     }
 
     private function check_type($str) {
+        include 'regex.php';
         if (preg_match($op_type, $str)) {
             return True;
 
