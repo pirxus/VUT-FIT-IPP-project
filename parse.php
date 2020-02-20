@@ -4,23 +4,33 @@
  * author: xsedla1h@stud.fit.vutbr.cz
  */
 
+
+define("SUCCESS", 0);
+define("OK", 0);
+define("ERROR", 1);
+define("HEADER_ERROR", 21);
+define("OPCODE_ERROR", 22);
+define("OTHER_SYNTAX_LEX_ERROR", 23);
+
 /* _____ main _____ */
+
+if (check_args() == ERROR) exit(HEADER_ERROR);
 $parser = new Parser();
 $parser->parse();
 
-if ($parser->get_header_status() != 0) {
+if ($parser->get_header_status() != OK) {
 
     if ($parser->get_header_status() == -1) {
         fprintf(STDERR, "Warning: empty imput file\n");
     }
 
-    exit(21);
+    exit(HEADER_ERROR);
 }
 
-if ($parser->get_body_status() > 0) /* Considering an empty program body as legitimate */
+if ($parser->get_body_status() > OK) /* Considering an empty program body as legitimate */
     exit($parser->get_body_status());
 
-exit(0);
+exit(SUCCESS);
 /* _____ end of main _____ */
 
 
@@ -49,48 +59,48 @@ class Parser {
     }
 
     public function parse() {
-        if ($this->lines == null) return 0;
+        if ($this->lines == null) return SUCCESS;
 
         foreach ($this->lines as $line) {
 
-            if ($this->header_ok != 0) { /* Check the input file header */
+            if ($this->header_ok != OK) { /* Check the input file header */
 
-                if ($this->check_header($line) == 1) { /* Check current line */
+                if ($this->check_header($line) == ERROR) { /* Check current line */
                     fprintf(STDERR, "error: Incorrect program header format\n");
-                    return 1;
+                    return ERROR;
                 }
 
             } else { /* The header has already been checked and is all right */
 
-                if ($this->check_body($line) == 1) {
+                if ($this->check_body($line) == ERROR) {
                     fprintf(STDERR, "error: Incorrect program body format\n");
-                    return 1;
+                    return ERROR;
                 }
             }
 
             $this->line_number++;
         }
 
-        return 0;
+        return SUCCESS;
     }
 
     private function check_header($line) {
         include 'regex.php';
 
         if (preg_match($empty_line, $line)) {
-            return 0;
+            return SUCCESS;
 
         } else if (preg_match($comment_line, $line)) {
-            return 0;
+            return SUCCESS;
 
         } else if (preg_match($header_line, $line)) {
-            $this->header_ok = 0;
-            return 0;
+            $this->header_ok = OK;
+            return SUCCESS;
 
         } else {
-            $this->header_ok = 21;
+            $this->header_ok = HEADER_ERROR;
             fprintf(STDERR, "error on line %d\n", $this->line_number);
-            return 1;
+            return ERROR;
         }
     }
 
@@ -98,10 +108,10 @@ class Parser {
         include 'regex.php';
 
         if (preg_match($empty_line, $line)) {
-            return 0;
+            return SUCCESS;
 
         } else if (preg_match($comment_line, $line)) {
-            return 0;
+            return SUCCESS;
 
         } else { /* Line contains an instruction */
 
@@ -120,14 +130,14 @@ class Parser {
                 if (count($line) != 3) {
                     fprintf(STDERR, "error: incorrect argument count on line %d\n",
                         $this->line_number);
-                    $this->body_ok = 23;
-                    return 1;
+                    $this->body_ok = OTHER_SYNTAX_LEX_ERROR;
+                    return ERROR;
                 }
 
                 // Check the operand format
                 if (!$this->check_var($line[1]) or !$this->check_symb($line[2])) {
-                    $this->body_ok = 23;
-                    return 1;
+                    $this->body_ok = OTHER_SYNTAX_LEX_ERROR;
+                    return ERROR;
                 }
 
             // CREATEFRAME PUSHFRAME POPFRAME RET BREAK
@@ -135,8 +145,8 @@ class Parser {
                 if (count($line) != 1) {
                     fprintf(STDERR, "error: incorrect argument count on line %d\n",
                         $this->line_number);
-                    $this->body_ok = 23;
-                    return 1;
+                    $this->body_ok = OTHER_SYNTAX_LEX_ERROR;
+                    return ERROR;
                 }
 
             // DEFVAR POPS var
@@ -144,14 +154,14 @@ class Parser {
                 if (count($line) != 2) {
                     fprintf(STDERR, "error: incorrect argument count on line %d\n",
                         $this->line_number);
-                    $this->body_ok = 23;
-                    return 1;
+                    $this->body_ok = OTHER_SYNTAX_LEX_ERROR;
+                    return ERROR;
                 }
                 
                 // Check the operand format
                 if (!$this->check_var($line[1])) {
-                    $this->body_ok = 23;
-                    return 1;
+                    $this->body_ok = OTHER_SYNTAX_LEX_ERROR;
+                    return ERROR;
                 }
 
             // PUSHS WRITE EXIT DPRINT symb
@@ -159,14 +169,14 @@ class Parser {
                 if (count($line) != 2) {
                     fprintf(STDERR, "error: incorrect argument count on line %d\n",
                         $this->line_number);
-                    $this->body_ok = 23;
-                    return 1;
+                    $this->body_ok = OTHER_SYNTAX_LEX_ERROR;
+                    return ERROR;
                 }
                 
                 // Check the operand format
                 if (!$this->check_symb($line[1])) {
-                    $this->body_ok = 23;
-                    return 1;
+                    $this->body_ok = OTHER_SYNTAX_LEX_ERROR;
+                    return ERROR;
                 }
 
             // CALL LABEL JUMP label
@@ -174,14 +184,14 @@ class Parser {
                 if (count($line) != 2) {
                     fprintf(STDERR, "error: incorrect argument count on line %d\n",
                         $this->line_number);
-                    $this->body_ok = 23;
-                    return 1;
+                    $this->body_ok = OTHER_SYNTAX_LEX_ERROR;
+                    return ERROR;
                 }
                 
                 // Check the operand format
                 if (!$this->check_label($line[1])) {
-                    $this->body_ok = 23;
-                    return 1;
+                    $this->body_ok = OTHER_SYNTAX_LEX_ERROR;
+                    return ERROR;
                 }
 
             // ADD SUB MUL IDIV LT GT EQ AND OR STRI2INT CONCAT GETCHAR SETCHAR
@@ -190,15 +200,15 @@ class Parser {
                 if (count($line) != 4) {
                     fprintf(STDERR, "error: incorrect argument count on line %d\n",
                         $this->line_number);
-                    $this->body_ok = 23;
-                    return 1;
+                    $this->body_ok = OTHER_SYNTAX_LEX_ERROR;
+                    return ERROR;
                 }
 
                 // Check the operand format
                 if (!$this->check_var($line[1]) or !$this->check_symb($line[2])
                     or !$this->check_symb($line[3])) {
-                    $this->body_ok = 23;
-                    return 1;
+                    $this->body_ok = OTHER_SYNTAX_LEX_ERROR;
+                    return ERROR;
                 }
 
             // READ var type
@@ -206,14 +216,14 @@ class Parser {
                 if (count($line) != 3) {
                     fprintf(STDERR, "error: incorrect argument count on line %d\n",
                         $this->line_number);
-                    $this->body_ok = 23;
-                    return 1;
+                    $this->body_ok = OTHER_SYNTAX_LEX_ERROR;
+                    return ERROR;
                 }
 
                 // Check the operand formats
                 if (!$this->check_var($line[1]) or !$this->check_type($line[2])) {
-                    $this->body_ok = 23;
-                    return 1;
+                    $this->body_ok = OTHER_SYNTAX_LEX_ERROR;
+                    return ERROR;
                 }
 
             // JUMPIFEQ JUMPIFNEQ label symb symb
@@ -221,26 +231,26 @@ class Parser {
                 if (count($line) != 4) {
                     fprintf(STDERR, "error: incorrect argument count on line %d\n",
                         $this->line_number);
-                    $this->body_ok = 23;
-                    return 1;
+                    $this->body_ok = OTHER_SYNTAX_LEX_ERROR;
+                    return ERROR;
                 }
 
                 // Check the operand format
                 if (!$this->check_label($line[1]) or !$this->check_symb($line[2])
                     or !$this->check_symb($line[3])) {
-                    $this->body_ok = 23;
-                    return 1;
+                    $this->body_ok = OTHER_SYNTAX_LEX_ERROR;
+                    return ERROR;
                 }
 
             } else {
                 fprintf(STDERR, "error: unknown instruction on line %d\n",
                     $this->line_number);
-                $this->body_ok = 22;
-                return 1;
+                $this->body_ok = OPCODE_ERROR;
+                return ERROR;
             }
         }
 
-        return 0;
+        return SUCCESS;
     } 
 
     /* Functions used to check the correct format of a variable/symbol/label */
@@ -293,7 +303,12 @@ class Parser {
     }
 }
 
-function check_args() {
-    return 0;
+class XMLer {
+    public $hello;
 }
+
+function check_args() {
+    return SUCCESS;
+}
+
 ?>
