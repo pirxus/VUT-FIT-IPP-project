@@ -253,7 +253,7 @@ class Parser {
         return SUCCESS;
     } 
 
-    /* Functions used to check the correct format of a variable/symbol/label */
+    /* Functions used to check the correct format of a variable/symbol/label/type */
     private function check_var($str) {
         include 'regex.php';
         if (preg_match($op_var, $str)) {
@@ -268,7 +268,10 @@ class Parser {
 
     private function check_symb($str) {
         include 'regex.php';
-        if (preg_match($op_const, $str) or preg_match($op_var, $str)) {
+        if (preg_match($op_const, $str)) {
+            return True;
+
+        } else if (preg_match($op_var, $str)) {
             return True;
 
         } else { 
