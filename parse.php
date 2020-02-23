@@ -4,12 +4,18 @@
  * author: xsedla1h@stud.fit.vutbr.cz
  */
 
+include 'regex.php';
+
 define("SUCCESS", 0);
 define("OK", 0);
 define("ERROR", 1);
 define("HEADER_ERROR", 21);
 define("OPCODE_ERROR", 22);
 define("OTHER_SYNTAX_LEX_ERROR", 23);
+
+/* check_symb() function return codes */
+define("R_FALSE", 0); define("R_VAR", 1); define("R_BOOL", 2); define("R_INT", 3);
+define("R_STR", 4); define("R_NIL", 5);
 
 /* _____ main _____ */
 
@@ -153,12 +159,8 @@ class Parser {
                 }
 
                 /* Write out xml.. */
-                $this->xml->start_el("arg1");
-                $this->xml->att("type", "var");
-                $this->xml->text($this->normalize_xml($line[1]));
-                $this->xml->end_el();
-
-                //TODO: symbol
+                $this->xml->arg("arg1", $line[1], False);
+                $this->xml->arg("arg2", $line[2], False);
 
             // CREATEFRAME PUSHFRAME POPFRAME RET BREAK
             } else if (preg_match($oc_frame_ret_break, $opcode)) {
@@ -185,10 +187,7 @@ class Parser {
                 }
 
                 /* Write out xml.. */
-                $this->xml->start_el("arg1");
-                $this->xml->att("type", "var");
-                $this->xml->text($this->normalize_xml($line[1]));
-                $this->xml->end_el();
+                $this->xml->arg("arg1", $line[1], False);
 
             // PUSHS WRITE EXIT DPRINT symb
             } else if (preg_match($oc_pushs_write_exit_dprint, $opcode)) {
@@ -205,7 +204,8 @@ class Parser {
                     return ERROR;
                 }
 
-                //TODO: symbol
+                /* Write out xml.. */
+                $this->xml->arg("arg1", $line[1], False);
 
             // CALL LABEL JUMP label
             } else if (preg_match($oc_call_label_jump, $opcode)) {
@@ -223,10 +223,7 @@ class Parser {
                 }
 
                 /* Write out xml.. */
-                $this->xml->start_el("arg1");
-                $this->xml->att("type", "label");
-                $this->xml->text($this->normalize_xml($line[1]));
-                $this->xml->end_el();
+                $this->xml->arg("arg1", $line[1], True);
 
             // ADD SUB MUL IDIV LT GT EQ AND OR STRI2INT CONCAT GETCHAR SETCHAR
             // var symb symb
@@ -246,12 +243,9 @@ class Parser {
                 }
 
                 /* Write out xml.. */
-                $this->xml->start_el("arg1");
-                $this->xml->att("type", "var");
-                $this->xml->text($this->normalize_xml($line[1]));
-                $this->xml->end_el();
-
-                //TODO: symbol
+                $this->xml->arg("arg1", $line[1], False);
+                $this->xml->arg("arg2", $line[2], False);
+                $this->xml->arg("arg3", $line[3], False);
 
             // READ var type
             } else if (preg_match($oc_read, $opcode)) {
@@ -269,15 +263,8 @@ class Parser {
                 }
 
                 /* Write out xml.. */
-                $this->xml->start_el("arg1");
-                $this->xml->att("type", "var");
-                $this->xml->text($this->normalize_xml($line[1]));
-                $this->xml->end_el();
-
-                $this->xml->start_el("arg2");
-                $this->xml->att("type", "type");
-                $this->xml->text($line[2]);
-                $this->xml->end_el();
+                $this->xml->arg("arg1", $line[1], False);
+                $this->xml->arg("arg2", $line[2], False);
 
             // JUMPIFEQ JUMPIFNEQ label symb symb
             } else if (preg_match($oc_jumpif, $opcode)) {
@@ -296,12 +283,9 @@ class Parser {
                 }
 
                 /* Write out xml.. */
-                $this->xml->start_el("arg1");
-                $this->xml->att("type", "label");
-                $this->xml->text($this->normalize_xml($line[1]));
-                $this->xml->end_el();
-
-                //TODO: symbols...
+                $this->xml->arg("arg1", $line[1], True);
+                $this->xml->arg("arg2", $line[2], False);
+                $this->xml->arg("arg3", $line[3], False);
 
 
             } else {
@@ -333,16 +317,20 @@ class Parser {
 
     private function check_symb($str) {
         include 'regex.php';
-        if (preg_match($op_const, $str)) {
-            return True;
-
+        if (preg_match($op_bool, $str)) {
+            return R_BOOL;
+        } else if (preg_match($op_str, $str)) {
+            return R_STR;
+        } else if (preg_match($op_nil, $str)) {
+            return R_NIL;
+        } else if (preg_match($op_int, $str)) {
+            return R_INT;
         } else if (preg_match($op_var, $str)) {
-            return True;
-
+            return R_VAR;
         } else { 
             fprintf(STDERR, "error: incorrect symbol format on line %d\n",
                 $this->line_number);
-            return False;
+            return R_FALSE;
         }
     }
 
@@ -368,14 +356,6 @@ class Parser {
                 $this->line_number);
             return False;
         }
-    }
-
-    private function normalize_xml($text) {
-        //str_replace("&", "&amp;", $text);
-        //str_replace("<", "&lt;", $text);
-        //str_replace(">", "&gt;", $text);
-        //str_replace("\"", "&quot;", $text);
-        return str_replace("'", "&apos;", $text);
     }
 
     public function end() {
@@ -411,11 +391,63 @@ class XMLer {
         $this->xw->text($text);
     }
 
+    public function arg($name, $value, $is_label) {
+        include 'regex.php';
+        $this->start_el($name);
+
+        if (preg_match($op_var, $value)) {
+            $this->att("type", "var");
+            $this->text($this->normalize_xml($value));
+
+        } else if (preg_match($op_int, $value)) {
+            $this->att("type", "int");
+            $this->text(substr($value, 4));
+
+        } else if (preg_match($op_str, $value)) {
+            $this->att("type", "str");
+            $this->text($this->normalize_xml(substr($value, 7)));
+
+        } else if (preg_match($op_nil, $value)) {
+            $this->att("type", "nil");
+            $this->text(substr($value, 4));
+
+        } else {
+
+            if ($is_label and preg_match($op_label, $value)) {
+                $this->att("type", "label");
+                $this->text($this->normalize_xml($value));
+
+            } else if (!$is_label and preg_match($op_bool, $value)) {
+                $this->att("type", "bool");
+                $this->text(strtolower(substr($value, 5)));
+
+            } else if (!$is_label and preg_match($op_type, $value)) {
+                $this->att("type", "type");
+                $this->text(strtolower(($value)));
+
+            } else {
+                fprintf(STDERR, "ERROR WRITING SYMBOL TO XML, THIS SHOULD NOT HAPPEN\n");
+                exit(42);
+            }
+        }
+
+        $this->end_el();
+    }
+
     public function end_xml() {
         $this->xw->endElement();
         $this->xw->endDocument();
         echo $this->xw->outputMemory();
     }
+
+    private function normalize_xml($text) {
+        //str_replace("&", "&amp;", $text);
+        //str_replace("<", "&lt;", $text);
+        //str_replace(">", "&gt;", $text);
+        //str_replace("\"", "&quot;", $text);
+        return str_replace("'", "&apos;", $text);
+    }
+
 }
 
 function check_args() {
