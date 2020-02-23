@@ -4,7 +4,6 @@
  * author: xsedla1h@stud.fit.vutbr.cz
  */
 
-
 define("SUCCESS", 0);
 define("OK", 0);
 define("ERROR", 1);
@@ -15,6 +14,7 @@ define("OTHER_SYNTAX_LEX_ERROR", 23);
 /* _____ main _____ */
 
 if (check_args() == ERROR) exit(HEADER_ERROR);
+
 $parser = new Parser();
 $parser->parse();
 
@@ -30,6 +30,8 @@ if ($parser->get_header_status() != OK) {
 if ($parser->get_body_status() > OK) /* Considering an empty program body as legitimate */
     exit($parser->get_body_status());
 
+$parser->end();
+
 exit(SUCCESS);
 /* _____ end of main _____ */
 
@@ -39,15 +41,20 @@ class Parser {
     private $header_ok;
     private $body_ok;
     private $line_number;
+    private $instr_no; /* the number of the currently processed instruction */
+    private $xml;
 
     public function Parser() {
         $this->header_ok = -1; /* -1 initial, 0 OK, 21 header error */
         $this->body_ok = -1; /* same as header, but 22 wrong opcode, 23 other error */
         $this->line_number = 1; /* line counter */
+        $this->instr_no = 1; /* line counter */
 
         while ($line = fgets(STDIN)) { /* Read the input */
             $this->lines[] = $line;
         }
+
+        $this->xml = new XMLer();
     }
 
     public function  get_header_status() {
@@ -119,11 +126,16 @@ class Parser {
             $line = preg_replace($comment_general, "", $line);
 
             /* Split the line into an array for easier manipulation */
-            $line = preg_split("/[ \t]/X", $line);
+            $line = str_replace("\n", "", $line);
+            $line = preg_split("/[ \t]/", $line);
 
-            /* Now check whether the instruction format is correct
-            * TODO: operand formats*/
+            /* Now check whether the instruction format is correct */
             $opcode = $line[0];
+
+            /* We can generate the instruction element beforehand... */
+            $this->xml->start_el('instruction');
+            $this->xml->att('order', (string)$this->instr_no);
+            $this->xml->att('opcode', strtoupper($opcode));
 
             // MOVE NOT INT2CHAR STRLEN TYPE var symb
             if (preg_match($oc_move_not_int2char_strlen_type, $opcode)) {
@@ -139,6 +151,14 @@ class Parser {
                     $this->body_ok = OTHER_SYNTAX_LEX_ERROR;
                     return ERROR;
                 }
+
+                /* Write out xml.. */
+                $this->xml->start_el("arg1");
+                $this->xml->att("type", "var");
+                $this->xml->text($this->normalize_xml($line[1]));
+                $this->xml->end_el();
+
+                //TODO: symbol
 
             // CREATEFRAME PUSHFRAME POPFRAME RET BREAK
             } else if (preg_match($oc_frame_ret_break, $opcode)) {
@@ -164,6 +184,12 @@ class Parser {
                     return ERROR;
                 }
 
+                /* Write out xml.. */
+                $this->xml->start_el("arg1");
+                $this->xml->att("type", "var");
+                $this->xml->text($this->normalize_xml($line[1]));
+                $this->xml->end_el();
+
             // PUSHS WRITE EXIT DPRINT symb
             } else if (preg_match($oc_pushs_write_exit_dprint, $opcode)) {
                 if (count($line) != 2) {
@@ -179,6 +205,8 @@ class Parser {
                     return ERROR;
                 }
 
+                //TODO: symbol
+
             // CALL LABEL JUMP label
             } else if (preg_match($oc_call_label_jump, $opcode)) {
                 if (count($line) != 2) {
@@ -193,6 +221,12 @@ class Parser {
                     $this->body_ok = OTHER_SYNTAX_LEX_ERROR;
                     return ERROR;
                 }
+
+                /* Write out xml.. */
+                $this->xml->start_el("arg1");
+                $this->xml->att("type", "label");
+                $this->xml->text($this->normalize_xml($line[1]));
+                $this->xml->end_el();
 
             // ADD SUB MUL IDIV LT GT EQ AND OR STRI2INT CONCAT GETCHAR SETCHAR
             // var symb symb
@@ -211,6 +245,14 @@ class Parser {
                     return ERROR;
                 }
 
+                /* Write out xml.. */
+                $this->xml->start_el("arg1");
+                $this->xml->att("type", "var");
+                $this->xml->text($this->normalize_xml($line[1]));
+                $this->xml->end_el();
+
+                //TODO: symbol
+
             // READ var type
             } else if (preg_match($oc_read, $opcode)) {
                 if (count($line) != 3) {
@@ -225,6 +267,17 @@ class Parser {
                     $this->body_ok = OTHER_SYNTAX_LEX_ERROR;
                     return ERROR;
                 }
+
+                /* Write out xml.. */
+                $this->xml->start_el("arg1");
+                $this->xml->att("type", "var");
+                $this->xml->text($this->normalize_xml($line[1]));
+                $this->xml->end_el();
+
+                $this->xml->start_el("arg2");
+                $this->xml->att("type", "type");
+                $this->xml->text($line[2]);
+                $this->xml->end_el();
 
             // JUMPIFEQ JUMPIFNEQ label symb symb
             } else if (preg_match($oc_jumpif, $opcode)) {
@@ -242,12 +295,24 @@ class Parser {
                     return ERROR;
                 }
 
+                /* Write out xml.. */
+                $this->xml->start_el("arg1");
+                $this->xml->att("type", "label");
+                $this->xml->text($this->normalize_xml($line[1]));
+                $this->xml->end_el();
+
+                //TODO: symbols...
+
+
             } else {
                 fprintf(STDERR, "error: unknown instruction on line %d\n",
                     $this->line_number);
                 $this->body_ok = OPCODE_ERROR;
                 return ERROR;
             }
+
+            $this->xml->end_el(); /* End the instruction element */
+            $this->instr_no++;
         }
 
         return SUCCESS;
@@ -304,10 +369,53 @@ class Parser {
             return False;
         }
     }
+
+    private function normalize_xml($text) {
+        //str_replace("&", "&amp;", $text);
+        //str_replace("<", "&lt;", $text);
+        //str_replace(">", "&gt;", $text);
+        //str_replace("\"", "&quot;", $text);
+        return str_replace("'", "&apos;", $text);
+    }
+
+    public function end() {
+        $this->xml->end_xml();
+    }
 }
 
 class XMLer {
-    public $hello;
+    private $xw;
+
+    public function XMLer() {
+        $this->xw = new XMLWriter();
+        $this->xw->openMemory();
+        $this->xw->setIndent(1);
+        $this->xw->setIndentString('  ');
+        $this->xw->startDocument('1.0', 'UTF-8');
+        $this->xw->startElement('program');
+    }
+
+    public function start_el($name) {
+        $this->xw->startElement($name);
+    }
+
+    public function end_el() {
+        $this->xw->endElement();
+    }
+
+    public function att($name, $value) {
+        $this->xw->writeAttribute($name, $value);
+    }
+
+    public function text($text) {
+        $this->xw->text($text);
+    }
+
+    public function end_xml() {
+        $this->xw->endElement();
+        $this->xw->endDocument();
+        echo $this->xw->outputMemory();
+    }
 }
 
 function check_args() {
