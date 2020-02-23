@@ -21,7 +21,7 @@ define("R_STR", 4); define("R_NIL", 5);
 
 if (check_args($argv) == ERROR) exit(HEADER_ERROR);
 
-$parser = new Parser();
+$parser = new Parser($argv);
 $parser->parse();
 
 if ($parser->get_header_status() != OK) {
@@ -49,8 +49,9 @@ class Parser {
     private $line_number;
     private $instr_no; /* the number of the currently processed instruction */
     private $xml;
+    private $stats;
 
-    public function Parser() {
+    public function Parser($argv) {
         $this->header_ok = -1; /* -1 initial, 0 OK, 21 header error */
         $this->body_ok = -1; /* same as header, but 22 wrong opcode, 23 other error */
         $this->line_number = 1; /* line counter */
@@ -61,6 +62,7 @@ class Parser {
         }
 
         $this->xml = new XMLer();
+        $this->stats = new Stats($argv);
     }
 
     public function  get_header_status() {
@@ -104,6 +106,7 @@ class Parser {
             return SUCCESS;
 
         } else if (preg_match($comment_line, $line)) {
+            $this->stats->comments++;
             return SUCCESS;
 
         } else if (preg_match($header_line, $line)) {
@@ -124,12 +127,16 @@ class Parser {
             return SUCCESS;
 
         } else if (preg_match($comment_line, $line)) {
+            $this->stats->comments++;
             return SUCCESS;
 
         } else { /* Line contains an instruction */
 
             /* First remove the incidental comment NOTE: add comment counter */
-            $line = preg_replace($comment_general, "", $line);
+            if (preg_match($comment_general, $line)) {
+                $this->stats->comments++;
+                $line = preg_replace($comment_general, "", $line);
+            }
 
             /* Split the line into an array for easier manipulation */
             $line = str_replace("\n", "", $line);
@@ -170,6 +177,9 @@ class Parser {
                     $this->body_ok = OTHER_SYNTAX_LEX_ERROR;
                     return ERROR;
                 }
+
+                if ($opcode[0] == "r" or $opcode[0] == "R")
+                    $this->stats->jumps++;
 
             // DEFVAR POPS var
             } else if (preg_match($oc_defvar_pops, $opcode)) {
@@ -224,6 +234,10 @@ class Parser {
 
                 /* Write out xml.. */
                 $this->xml->arg("arg1", $line[1], True);
+
+                $this->stats->jumps++;
+                if ($opcode[0] == "l" or $opcode[0] == "L")
+                    $this->stats->labels++;
 
             // ADD SUB MUL IDIV LT GT EQ AND OR STRI2INT CONCAT GETCHAR SETCHAR
             // var symb symb
@@ -287,6 +301,7 @@ class Parser {
                 $this->xml->arg("arg2", $line[2], False);
                 $this->xml->arg("arg3", $line[3], False);
 
+                $this->stats->jumps++;
 
             } else {
                 fprintf(STDERR, "error: unknown instruction on line %d\n",
@@ -296,6 +311,7 @@ class Parser {
             }
 
             $this->xml->end_el(); /* End the instruction element */
+            $this->stats->loc++;
             $this->instr_no++;
         }
 
@@ -359,6 +375,7 @@ class Parser {
     }
 
     public function end() {
+        $this->stats->flush_stats();
         $this->xml->end_xml();
     }
 }
@@ -387,7 +404,7 @@ class XMLer {
         $this->xw->writeAttribute($name, $value);
     }
 
-    public function text($text) {
+    private function text($text) {
         $this->xw->text($text);
     }
 
@@ -448,6 +465,73 @@ class XMLer {
 
 }
 
+class Stats {
+    public $loc;
+    public $comments;
+    public $labels;
+    public $jumps;
+
+    private $flags;
+
+    private $file;
+
+    public function Stats($argv) {
+        $this->loc = 0;
+        $this->comments = 0;
+        $this->labels = 0;
+        $this->jumps = 0;
+
+        $flags = array(
+            "stats::",
+            "loc",
+            "comments",
+            "labels",
+            "jumps",
+        );
+
+
+        $this->flags = getopt("", $flags); /* get the arguments */
+
+        if (!array_key_exists("stats", $this->flags) and count($this->flags) != 0)
+            exit(10);
+
+        if ($this->flags["stats"] == null) /* output stats file must be specified */
+            exit(10);
+
+        $this->file = fopen($this->flags["stats"],  'w'); /* open the stats file */
+
+        if ($this->file == False) {
+            fprintf(STDERR, "Error: could not open stats file\n");
+            exit(42);
+        }
+    }
+
+    public function flush_stats() {
+
+        foreach (array_keys($this->flags) as $flag) {
+            switch ($flag) {
+                case "loc":
+                    fprintf($this->file, "%d\n", $this->loc);
+                    break;
+
+                case "comments":
+                    fprintf($this->file, "%d\n", $this->comments);
+                    break;
+
+                case "labels":
+                    fprintf($this->file, "%d\n", $this->labels);
+                    break;
+
+                case "jumps":
+                    fprintf($this->file, "%d\n", $this->jumps);
+                    break;
+            }
+        }
+    }
+}
+
+
+//TODO FIXME invalid argument combinations
 function check_args($argv) {
     if (count($argv) > 1) {
         if (count($argv) == 2) {
@@ -462,10 +546,10 @@ function check_args($argv) {
                 exit(10);
             }
 
-        } else {
-            fprintf(STDERR, "Error: illegal argument combination passed to the script\n");
-            exit(10);
-        }
+        }// else {
+        //    fprintf(STDERR, "Error: illegal argument combination passed to the script\n");
+        //    exit(10);
+        //}
     }
 
     return SUCCESS;
