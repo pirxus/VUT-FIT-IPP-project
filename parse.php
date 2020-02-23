@@ -19,7 +19,7 @@ define("R_STR", 4); define("R_NIL", 5);
 
 /* _____ main _____ */
 
-if (check_args() == ERROR) exit(HEADER_ERROR);
+if (check_args($argv) == ERROR) exit(HEADER_ERROR);
 
 $parser = new Parser();
 $parser->parse();
@@ -426,6 +426,8 @@ class XMLer {
                 $this->text(strtolower(($value)));
 
             } else {
+                /* Super unlikely to happen - actually this cannot happen,
+                * but who knows.... */
                 fprintf(STDERR, "ERROR WRITING SYMBOL TO XML, THIS SHOULD NOT HAPPEN\n");
                 exit(42);
             }
@@ -441,16 +443,31 @@ class XMLer {
     }
 
     private function normalize_xml($text) {
-        //str_replace("&", "&amp;", $text);
-        //str_replace("<", "&lt;", $text);
-        //str_replace(">", "&gt;", $text);
-        //str_replace("\"", "&quot;", $text);
         return str_replace("'", "&apos;", $text);
     }
 
 }
 
-function check_args() {
+function check_args($argv) {
+    if (count($argv) > 1) {
+        if (count($argv) == 2) {
+            if ($argv[1] == "--help") {
+
+                fprintf(STDOUT, "Skript typu filtr (parse.php v jazyce PHP 7.4) nacte ze standardniho vstupu zdrojovy kod v\nIPPcode20, zkontroluje lexikalni a syntaktickou spravnost kodu a vypise na standardni\nvystup XML reprezentaci programu.\n");
+                exit(SUCCESS);
+
+            } else {
+                fprintf(STDERR, "Error: unknown argument %s passed to the script\n",
+                    $argv[1]);
+                exit(10);
+            }
+
+        } else {
+            fprintf(STDERR, "Error: illegal argument combination passed to the script\n");
+            exit(10);
+        }
+    }
+
     return SUCCESS;
 }
 
