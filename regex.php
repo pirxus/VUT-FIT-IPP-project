@@ -22,10 +22,11 @@ $oc_jumpif = "/\A((jumpifeq)|(jumpifneq))$/i";
 
 $op_var = "/\A(((GF)|(LF)|(TF))@[a-zA-Z_\-$&%*!?][a-zA-Z0-9_\-$&%*!?]*)$/";
 $op_label = "/\A([a-zA-Z_\-$&%*!?][a-zA-Z0-9_\-$&%*!?]*)$/";
-$op_const = "/\A((bool@((true)|(false)))|(nil@nil)|(int@-?([0-9]*))|(string@([!\"$-[\]-~]|(\\\\[0-9]{3}))*))$/";
+$op_const = "/\A((bool@((true)|(false)))|(nil@nil)|(int@-?([0-9]+))|(string@([!\"$-[\]-~]|(\\\\[0-9]{3}))*))$/";
 $op_bool = "/\Abool@((true)|(false))$/";
 $op_nil = "/\Anil@nil$/";
 $op_str = "/\Astring@([!\"$-[\]-~]|(\\\\[0-9]{3}))*$/";
-$op_int = "/\Aint@-?[0-9]*$/";
+$op_int = "/\Aint@-?[0-9]+$/";
 $op_type = "/\A((int)|(string)|(bool))$/";
+
 ?>

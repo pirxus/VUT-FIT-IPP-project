@@ -4,7 +4,9 @@
  * author: xsedla1h@stud.fit.vutbr.cz
  */
 
-include 'regex.php';
+/* check_symb() function return codes */
+define("R_FALSE", 0); define("R_VAR", 1); define("R_BOOL", 2); define("R_INT", 3);
+define("R_STR", 4); define("R_NIL", 5);
 
 define("SUCCESS", 0);
 define("OK", 0);
@@ -13,13 +15,12 @@ define("HEADER_ERROR", 21);
 define("OPCODE_ERROR", 22);
 define("OTHER_SYNTAX_LEX_ERROR", 23);
 
-/* check_symb() function return codes */
-define("R_FALSE", 0); define("R_VAR", 1); define("R_BOOL", 2); define("R_INT", 3);
-define("R_STR", 4); define("R_NIL", 5);
 
 /* _____ main _____ */
-
 if (check_args($argv) == ERROR) exit(HEADER_ERROR);
+
+$stat_flags = array();
+$collect_stats = False;
 
 $parser = new Parser($argv);
 $parser->parse();
@@ -488,21 +489,24 @@ class Stats {
             "labels",
             "jumps",
         );
+        $this->flags = array();
 
 
-        $this->flags = getopt("", $flags); /* get the arguments */
+        if (count($argv) > 1) {
+            $this->flags = getopt("", $flags); /* get the arguments */
 
-        if (!array_key_exists("stats", $this->flags) and count($this->flags) != 0)
-            exit(10);
+            if (!array_key_exists("stats", $this->flags) and count($this->flags) != 0)
+                exit(10);
 
-        if ($this->flags["stats"] == null) /* output stats file must be specified */
-            exit(10);
+            if ($this->flags["stats"] == null) /* output stats file must be specified */
+                exit(10);
 
-        $this->file = fopen($this->flags["stats"],  'w'); /* open the stats file */
+            $this->file = fopen($this->flags["stats"],  'w'); /* open the stats file */
 
-        if ($this->file == False) {
-            fprintf(STDERR, "Error: could not open stats file\n");
-            exit(42);
+            if ($this->file == False) {
+                fprintf(STDERR, "Error: could not open stats file\n");
+                exit(42);
+            }
         }
     }
 
@@ -533,24 +537,40 @@ class Stats {
 
 //TODO FIXME invalid argument combinations
 function check_args($argv) {
-    if (count($argv) > 1) {
         if (count($argv) == 2) {
-            if ($argv[1] == "--help") {
 
+            if ($argv[1] == "--help") {
                 fprintf(STDOUT, "Skript typu filtr (parse.php v jazyce PHP 7.4) nacte ze standardniho vstupu zdrojovy kod v\nIPPcode20, zkontroluje lexikalni a syntaktickou spravnost kodu a vypise na standardni\nvystup XML reprezentaci programu.\n");
                 exit(SUCCESS);
 
+            } else if (preg_match("/--stats=.*/", $argv[1])) {
+                // NOP TODO: let the stats class know
+                return SUCCESS;
+                
             } else {
                 fprintf(STDERR, "Error: unknown argument %s passed to the script\n",
                     $argv[1]);
                 exit(10);
             }
 
-        }// else {
-        //    fprintf(STDERR, "Error: illegal argument combination passed to the script\n");
-        //    exit(10);
-        //}
-    }
+        } else if (count($argv) > 2 and count($argv) <= 6) {
+            if (in_array("--help", $argv)) {
+                fprintf(STDERR,"Error: illegal argument combination - help has to be the only argument\n");
+                exit(10);
+
+            } else if (!in_array(preg_grep("/--stats=.*/", $argv)[1], $argv)) {
+                fprintf(STDERR, "Error: illegal argument combination\n");
+                exit(10);
+
+            } else if (count(preg_grep("/--stats=.*/", $argv)) > 1) {
+                fprintf(STDERR, "Error: illegal argument combination\n");
+                exit(10);
+
+            } else {
+                // parse the stats
+                return SUCCESS;
+            }
+        }
 
     return SUCCESS;
 }
