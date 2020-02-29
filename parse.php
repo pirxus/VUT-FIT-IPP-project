@@ -17,19 +17,21 @@ define("OTHER_SYNTAX_LEX_ERROR", 23);
 
 
 /* _____ main _____ */
-if (check_args($argv) == ERROR) exit(HEADER_ERROR);
 
 $stat_flags = array();
 $collect_stats = False;
 
-$parser = new Parser($argv);
-$parser->parse();
+/* Parse the arguments passed to the script */
+check_args($argv, $stat_flags, $collect_stats);
 
+$parser = new Parser($stat_flags, $collect_stats);
+$parser->parse(); /* Parse the input */
+
+/* Determine the outcome of the parsing process and exit in case of an error */
 if ($parser->get_header_status() != OK) {
 
-    if ($parser->get_header_status() == -1) {
+    if ($parser->get_header_status() == -1)
         fprintf(STDERR, "Warning: empty imput file\n");
-    }
 
     exit(HEADER_ERROR);
 }
@@ -38,11 +40,12 @@ if ($parser->get_body_status() > OK) /* Considering an empty program body as leg
     exit($parser->get_body_status());
 
 $parser->end();
-
 exit(SUCCESS);
+
 /* _____ end of main _____ */
 
 
+/* This class is responsible for the whole parsing process. */
 class Parser {
     private $lines;
     private $header_ok;
@@ -52,7 +55,7 @@ class Parser {
     private $xml;
     private $stats;
 
-    public function Parser($argv) {
+    public function Parser($stat_flags, $collect_stats) {
         $this->header_ok = -1; /* -1 initial, 0 OK, 21 header error */
         $this->body_ok = -1; /* same as header, but 22 wrong opcode, 23 other error */
         $this->line_number = 1; /* line counter */
@@ -63,7 +66,7 @@ class Parser {
         }
 
         $this->xml = new XMLer();
-        $this->stats = new Stats($argv);
+        $this->stats = new Stats($stat_flags, $collect_stats);
     }
 
     public function  get_header_status() {
@@ -381,6 +384,7 @@ class Parser {
     }
 }
 
+/* This class is responsible for printing out the xml representation of the input code. */
 class XMLer {
     private $xw;
 
@@ -466,6 +470,9 @@ class XMLer {
 
 }
 
+/* This class is responsible for collecting statistics about the input code. Once the
+ * parsing process is finished, the collected statistics are then printed out to
+ * an output file specified by the user. */
 class Stats {
     public $loc;
     public $comments;
@@ -473,35 +480,22 @@ class Stats {
     public $jumps;
 
     private $flags;
+    private $collect_stats;
 
     private $file;
 
-    public function Stats($argv) {
+    public function Stats($stat_flags, $collect_stats) {
         $this->loc = 0;
         $this->comments = 0;
         $this->labels = 0;
         $this->jumps = 0;
 
-        $flags = array(
-            "stats::",
-            "loc",
-            "comments",
-            "labels",
-            "jumps",
-        );
-        $this->flags = array();
+        $this->collect_stats = $collect_stats;
+        $this->flags = $stat_flags;
 
-
-        if (count($argv) > 1) {
-            $this->flags = getopt("", $flags); /* get the arguments */
-
-            if (!array_key_exists("stats", $this->flags) and count($this->flags) != 0)
-                exit(10);
-
-            if ($this->flags["stats"] == null) /* output stats file must be specified */
-                exit(10);
-
-            $this->file = fopen($this->flags["stats"],  'w'); /* open the stats file */
+        if ($collect_stats) {
+            /* Open the output file */
+            $this->file = fopen($stat_flags[0],  'w'); /* open the stats file */
 
             if ($this->file == False) {
                 fprintf(STDERR, "Error: could not open stats file\n");
@@ -512,39 +506,44 @@ class Stats {
 
     public function flush_stats() {
 
-        foreach (array_keys($this->flags) as $flag) {
-            switch ($flag) {
-                case "loc":
-                    fprintf($this->file, "%d\n", $this->loc);
-                    break;
+        if ($this->collect_stats) {
+            /* print out the collected data for each flag passed to the script.. */
+            foreach ($this->flags as $flag) {
+                switch ($flag) {
+                    case "--loc":
+                        fprintf($this->file, "%d\n", $this->loc);
+                        break;
 
-                case "comments":
-                    fprintf($this->file, "%d\n", $this->comments);
-                    break;
+                    case "--comments":
+                        fprintf($this->file, "%d\n", $this->comments);
+                        break;
 
-                case "labels":
-                    fprintf($this->file, "%d\n", $this->labels);
-                    break;
+                    case "--labels":
+                        fprintf($this->file, "%d\n", $this->labels);
+                        break;
 
-                case "jumps":
-                    fprintf($this->file, "%d\n", $this->jumps);
-                    break;
+                    case "--jumps":
+                        fprintf($this->file, "%d\n", $this->jumps);
+                        break;
+                }
             }
         }
     }
 }
 
 
-//TODO FIXME invalid argument combinations
-function check_args($argv) {
+function check_args($argv, &$flags, &$collect) {
+        $collect = False;
         if (count($argv) == 2) {
 
             if ($argv[1] == "--help") {
                 fprintf(STDOUT, "Skript typu filtr (parse.php v jazyce PHP 7.4) nacte ze standardniho vstupu zdrojovy kod v\nIPPcode20, zkontroluje lexikalni a syntaktickou spravnost kodu a vypise na standardni\nvystup XML reprezentaci programu.\n");
                 exit(SUCCESS);
 
-            } else if (preg_match("/--stats=.*/", $argv[1])) {
-                // NOP TODO: let the stats class know
+            } else if (preg_match("/--stats=\S+$/", $argv[1])) {
+                $collect = True; /* Even though the output will be an empty file... */
+                $file = substr(array_values(preg_grep("/--stats=\S+$/", $argv))[0], 8);
+                array_push($flags, $file);
                 return SUCCESS;
                 
             } else {
@@ -553,21 +552,41 @@ function check_args($argv) {
                 exit(10);
             }
 
-        } else if (count($argv) > 2 and count($argv) <= 6) {
+        } else if (count($argv) > 2) {
             if (in_array("--help", $argv)) {
                 fprintf(STDERR,"Error: illegal argument combination - help has to be the only argument\n");
                 exit(10);
 
-            } else if (!in_array(preg_grep("/--stats=.*/", $argv)[1], $argv)) {
-                fprintf(STDERR, "Error: illegal argument combination\n");
-                exit(10);
+            } else if (count(preg_grep("/--stats=\S+$/", $argv)) != 1) {
 
-            } else if (count(preg_grep("/--stats=.*/", $argv)) > 1) {
-                fprintf(STDERR, "Error: illegal argument combination\n");
+                /* multiple stats files specified or none at all.. */
+                fprintf(STDERR, "Error: multiple or no stats files specified\n");
                 exit(10);
 
             } else {
-                // parse the stats
+
+                $collect = True;
+
+                /* obtain the stats output file name */
+                $file = substr(array_values(preg_grep("/--stats=\S+$/", $argv))[0], 8);
+                array_push($flags, $file);
+
+                /* Now check for additional parameters for the --stats argument */
+                foreach ($argv as $arg) {
+                    switch ($arg) {
+                        case "--loc": case "--comments":
+                        case "--labels": case "--jumps":
+                            array_push($flags, $arg);
+                            break;
+                    }
+                }
+
+                /* now check if argv only contains legitimate arguments */
+                if (count($flags) != count($argv) - 1) {
+                    fprintf(STDERR, "Error: unknown argument passed to the script\n");
+                    exit(10);
+                }
+                
                 return SUCCESS;
             }
         }
