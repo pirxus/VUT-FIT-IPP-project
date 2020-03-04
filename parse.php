@@ -395,6 +395,7 @@ class XMLer {
         $this->xw->setIndentString('  ');
         $this->xw->startDocument('1.0', 'UTF-8');
         $this->xw->startElement('program');
+        $this->att('language', 'IPPcode20');
     }
 
     public function start_el($name) {
@@ -426,7 +427,7 @@ class XMLer {
             $this->text(substr($value, 4));
 
         } else if (preg_match($op_str, $value)) {
-            $this->att("type", "str");
+            $this->att("type", "string");
             $this->text($this->normalize_xml(substr($value, 7)));
 
         } else if (preg_match($op_nil, $value)) {

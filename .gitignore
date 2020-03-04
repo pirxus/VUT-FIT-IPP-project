@@ -1,5 +1,8 @@
+tests/
 *.txt
-input
+input*
+output
+readme*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
