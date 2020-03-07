@@ -18,7 +18,7 @@ define("OTHER_SYNTAX_LEX_ERROR", 23);
 
 /* _____ main _____ */
 
-$stat_flags = array();
+$stat_flags = array(); /* Some indicators for the stats collector */
 $collect_stats = False;
 
 /* Parse the arguments passed to the script */
@@ -28,16 +28,16 @@ $parser = new Parser($stat_flags, $collect_stats);
 $parser->parse(); /* Parse the input */
 
 /* Determine the outcome of the parsing process and exit in case of an error */
-if ($parser->get_header_status() != OK) {
+if ($parser->header_ok != OK) {
 
-    if ($parser->get_header_status() == -1)
+    if ($parser->header_ok == -1)
         fprintf(STDERR, "Warning: empty imput file\n");
 
     exit(HEADER_ERROR);
 }
 
-if ($parser->get_body_status() > OK) /* Considering an empty program body as legitimate */
-    exit($parser->get_body_status());
+if ($parser->body_ok > OK) /* Considering an empty program body as legitimate */
+    exit($parser->body_ok);
 
 $parser->end();
 exit(SUCCESS);
@@ -47,9 +47,9 @@ exit(SUCCESS);
 
 /* This class is responsible for the whole parsing process. */
 class Parser {
+    public $header_ok;
+    public $body_ok;
     private $lines;
-    private $header_ok;
-    private $body_ok;
     private $line_number;
     private $instr_no; /* the number of the currently processed instruction */
     private $xml;
@@ -67,14 +67,6 @@ class Parser {
 
         $this->xml = new XMLer();
         $this->stats = new Stats($stat_flags, $collect_stats);
-    }
-
-    public function  get_header_status() {
-        return $this->header_ok;
-    }
-
-    public function  get_body_status() {
-        return $this->body_ok;
     }
 
     public function parse() {
@@ -96,13 +88,14 @@ class Parser {
                     return ERROR;
                 }
             }
-
             $this->line_number++;
         }
 
         return SUCCESS;
     }
 
+    /* This method determines the correctness of one line of source code that is
+     * situated in the header section of the source file */
     private function check_header($line) {
         include 'regex.php';
 
@@ -124,6 +117,8 @@ class Parser {
         }
     }
 
+    /* This method determines the correctness of one line of source code that is
+     * situated in the body section of the source file */
     private function check_body($line) {
         include 'regex.php';
 
@@ -322,7 +317,8 @@ class Parser {
         return SUCCESS;
     } 
 
-    /* Functions used to check the correct format of a variable/symbol/label/type */
+    /* What follows are some methods used to check the correct format
+     * of a variable/symbol/label/type */
     private function check_var($str) {
         include 'regex.php';
         if (preg_match($op_var, $str)) {
@@ -378,6 +374,8 @@ class Parser {
         }
     }
 
+    /* Wrap up the parsing process by printing out the xml output and writing the
+     * collected stats to the ouptut stats file */
     public function end() {
         $this->stats->flush_stats();
         $this->xml->end_xml();
@@ -414,6 +412,10 @@ class XMLer {
         $this->xw->text($text);
     }
 
+    /* This method handles the printing of one argument of an instruction. The
+     * parameter $name stands for arg1/arg2/arg3, $value stands for the content of the
+     * argument, be it a variable name or a literal. $is_label helps us distinguish
+     * the labels from other types of instruction parameters */
     public function arg($name, $value, $is_label) {
         include 'regex.php';
         $this->start_el($name);
@@ -459,12 +461,15 @@ class XMLer {
         $this->end_el();
     }
 
+    /* Finalize the xml writing process */
     public function end_xml() {
         $this->xw->endElement();
         $this->xw->endDocument();
         echo $this->xw->outputMemory();
     }
 
+    /* This method replaces problematic character in the string we want encode in
+     * xml */
     private function normalize_xml($text) {
         return str_replace("'", "&apos;", $text);
     }
@@ -475,14 +480,18 @@ class XMLer {
  * parsing process is finished, the collected statistics are then printed out to
  * an output file specified by the user. */
 class Stats {
+    /* Counters for the collected stats */
     public $loc;
     public $comments;
     public $labels;
     public $jumps;
 
+    /* Flags that indicate which stats to collect and even whether
+     * to collect them at all */
     private $flags;
     private $collect_stats;
 
+    /* Stats output file */
     private $file;
 
     public function Stats($stat_flags, $collect_stats) {
@@ -505,6 +514,7 @@ class Stats {
         }
     }
 
+    /* Print the collected stats in the gived output file */
     public function flush_stats() {
 
         if ($this->collect_stats) {
@@ -533,6 +543,9 @@ class Stats {
 }
 
 
+/* This function handles the parsing of program arguments. The parameters $flags and
+ * $collect are meant for the stats class so that it can decide on which arguments
+ * to collect. The $flags array has the output stats file name stored at the index 0. */
 function check_args($argv, &$flags, &$collect) {
         $collect = False;
         if (count($argv) == 2) {
