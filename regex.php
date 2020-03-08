@@ -1,4 +1,9 @@
 <?php
+/**
+ * @file parse.php
+ * @brief This file contains most of the regular expressions used in the parse.php module
+ * @author Simon Sedlacek - xsedla1h
+ */
 
 /* regex patterns for lexical and syntax checks */
 $empty_line = "/\A[ \t]*$/";

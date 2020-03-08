@@ -1,7 +1,8 @@
 <?php
 /**
- * file: parse.php
- * author: xsedla1h@stud.fit.vutbr.cz
+ * @file parse.php
+ * @brief This is the main module of the IPPcode20 parser
+ * @author Simon Seldacek - xsedla1h
  */
 
 /* check_symb() function return codes */
