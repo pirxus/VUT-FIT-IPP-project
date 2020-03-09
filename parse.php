@@ -140,7 +140,7 @@ class Parser {
 
             /* Split the line into an array for easier manipulation */
             $line = str_replace("\n", "", $line);
-            $line = preg_split("/[ \t]/", $line);
+            $line = preg_split("/[ \t]+/", $line);
 
             /* Now check whether the instruction format is correct */
             $opcode = $line[0];
