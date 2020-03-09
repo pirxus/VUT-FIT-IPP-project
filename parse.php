@@ -241,7 +241,7 @@ class Parser {
 
             // ADD SUB MUL IDIV LT GT EQ AND OR STRI2INT CONCAT GETCHAR SETCHAR
             // var symb symb
-            } else if (preg_match($oc_math_comp_logic_str2int_concat_getsetc, $opcode)) {
+            } else if (preg_match($oc_math_comp_logic_stri2int_concat_getsetc, $opcode)) {
                 if (count($line) != 4) {
                     fprintf(STDERR, "error: incorrect argument count on line %d\n",
                         $this->line_number);
