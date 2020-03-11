@@ -2,7 +2,7 @@
 /**
  * @file parse.php
  * @brief This is the main module of the IPPcode20 parser
- * @author Simon Seldacek - xsedla1h
+ * @author Simon Sedlacek - xsedla1h
  */
 
 /* check_symb() function return codes */
@@ -455,7 +455,7 @@ class XMLer {
                 /* Super unlikely to happen - actually this cannot happen,
                 * but who knows.... */
                 fprintf(STDERR, "ERROR WRITING SYMBOL TO XML, THIS SHOULD NOT HAPPEN\n");
-                exit(42);
+                exit(99);
             }
         }
 
@@ -510,7 +510,7 @@ class Stats {
 
             if ($this->file == False) {
                 fprintf(STDERR, "Error: could not open stats file\n");
-                exit(42);
+                exit(12);
             }
         }
     }

@@ -24,7 +24,6 @@ except Exception:
 program = ET.parse(filename).getroot()
 
 def check_syntax(program):
-
     if program.tag != 'program' or 'language' not in program.attrib or\
             program.attrib['language'] != 'IPPcode20':
         sys.stderr.write('Invalid root element\n')
@@ -42,4 +41,9 @@ def check_syntax(program):
         order += 1
 
 ip_stack = [] # this list manages the return addresses for function calls
+global_frame = {}
+local_frame = {}
+tmp_frame = {}
+labels = {}
+
 check_syntax(program)
