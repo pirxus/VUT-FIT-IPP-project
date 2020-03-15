@@ -1,49 +1,40 @@
 #!/usr/bin/python3
+##
+# @file   interpret.py
+# @author Simon Sedlacek, xsedla1h
+# @brief  This is the main module of the IPPcode20 interpreter
 
 from xml.etree import ElementTree as ET
-from xml.sax.handler import ContentHandler
-from xml.sax import make_parser
 import sys
 
+from xml_checks import *
+from execute import execute_program
+
+# TODO input check:
+# - well-formed
+# - check instruction elements + arguments for each instruction
+# - sort by ascending order and check for duplicit order values
+# - extract labels
+# - start executing
+
 NOT_WELL_FORMED = 31
-XML_ERROR = 32 # pretty much all syntax, lexical and other xml-related errors
+XML_ERROR = 32 # pretty much all syntax, lexical and other input xml-fomat related errors
 
 # get the input file name
 if len(sys.argv) < 2: sys.exit(42)
 filename = sys.argv[1]
 
-# check the input file well-formed-ness
-try:
-    well_formed_parser = make_parser()
-    well_formed_parser.setContentHandler(ContentHandler())
-    well_formed_parser.parse(filename)
-except Exception:
-    sys.stderr.write(f'Input file {filename} is not a well-formed XML\n')
-    sys.exit(NOT_WELL_FORMED)
+try: check_well_formed(filename)
+except Exception: sys.exit(NOT_WELL_FORMED)
 
 program = ET.parse(filename).getroot()
 
-def check_syntax(program):
-    if program.tag != 'program' or 'language' not in program.attrib or\
-            program.attrib['language'] != 'IPPcode20':
-        sys.stderr.write('Invalid root element\n')
-        sys.exit(XML_ERROR)
+try:
+    program, labels = check_syntax(program)
+    print(program, labels)
 
-    order = 1
-    for instr in program:
-        if instr.tag != 'instruction':
-            sys.stderr.write('Invalid top level element tag')
-            
-        if int(instr.attrib['order']) != order:
-            sys.stderr.write('Invalid order number %d of instruction %s\n'
-                    % (instr.attrib['order'], instr.attrib['opcode']))
-            sys.exit(XML_ERROR)
-        order += 1
+except Exception: sys.exit(XML_ERROR)
 
-ip_stack = [] # this list manages the return addresses for function calls
-global_frame = {}
-local_frame = {}
-tmp_frame = {}
-labels = {}
+#try: execute_program(program, labels)
+#except: sys.exit(42)
 
-check_syntax(program)
