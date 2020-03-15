@@ -13,11 +13,12 @@ class Processor:
         self.labels = labels
 
         self.ip_stack = [] # this list manages the return addresses for function calls
-        self.global_frame = [] # a list of dictionaries of variables
-        self.local_frame = []
+        self.global_frame = {} # a dictionary of variables in the GF
+        self.local_frame = [] # a list of dictionaries of variables for each LF
         self.ip = 0
-        self.global_frame_index = 0
-        self.local_frame_index = 0
+        self.gf_index = 0
+        self.lf_index = -1
+        self.tf_defined = False # indicates the existence of a temporary frame
 
 
     def execute_program(self):
@@ -93,26 +94,25 @@ class Processor:
                 op.SETCHAR()
             #####################
             elif opcode == 'TYPE':
-                op.TYPE()
-            #####################
+                symb_type = op.TYPE(self)
+            ##################### TODO: rework these following...
             elif opcode == 'LABEL':
                 pass
             elif opcode == 'JUMP':
-                self.ip = op.JUMP(self.labels, self.instr[0])
+                self.ip = op.JUMP(self)
                 continue
             elif opcode == 'JUMPIFEQ':
-                jump, index = op.JUMPIFEQ(self.labels, self.instr[0],
-                        self.instr[1], self.instr[2])
+                jump, index = op.JUMPIFEQ(self)
                 if jump:
                     self.ip = index
-                continue
+                    continue
             elif opcode == 'JUMPIFNEQ':
-                jump, index = op.JUMPIFNEQ(self.labels, self.instr[0],
-                        self.instr[1], self.instr[2])
+                jump, index = op.JUMPIFNEQ(self)
                 if jump:
                     self.ip = index
+                    continue
             elif opcode == 'EXIT':
-                retcode = op.EXIT(self.instr[0])
+                retcode = op.EXIT(self)
                 sys.exit(retcode)
             #####################
             elif opcode == 'DPRINT':
@@ -121,7 +121,7 @@ class Processor:
                 op.BREAK()
 
             else:
-                raise Exception
+                raise Exception(32, 'Unknown opcode') # this should not happen...
 
         except Exception as e:
             raise e

@@ -13,22 +13,29 @@ from execute import Processor
 NOT_WELL_FORMED = 31
 XML_ERROR = 32 # pretty much all syntax, lexical and other input xml-fomat related errors
 
-# get the input file name
+#TODO: program arguments, syntax checking, 
+
+# get the input file name TODO: proper argument parsing
 if len(sys.argv) < 2: sys.exit(42)
 filename = sys.argv[1]
 
-try: check_well_formed(filename)
-except Exception: sys.exit(NOT_WELL_FORMED)
+try:
+    check_well_formed(filename)
+except Exception:
+    sys.exit(NOT_WELL_FORMED)
 
 program = ET.parse(filename).getroot()
 
 try:
     program, labels = check_syntax(program)
-    print(program, labels)
+except Exception:
+    sys.exit(XML_ERROR)
 
-except Exception: sys.exit(XML_ERROR)
-
+# now execute the program
 processor = Processor(program, labels)
-try: processor.execute_program()
-except Exception as e: sys.exit(e[0])
-
+try:
+    processor.execute_program()
+except Exception as e:
+    retcode, message = e.args
+    sys.stderr.write(message)
+    sys.exit(e[0])
