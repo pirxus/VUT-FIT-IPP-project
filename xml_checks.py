@@ -25,8 +25,15 @@ def check_instruction(instr):
             set(instr.attrib.keys()) != {'opcode', 'order'}):
         raise Exception('Invalid top level element/instruction format')
     
+    # check the order attribute format and value
+    try:
+        order = int(instr.attrib['order'])
+        if order < 1:
+            raise Exception('Invalid order attribute value', order)
+    except ValueError:
+        raise Exception('Invalid order attribute format', instr.attrib['order'])
+
     return None
-    #TODO check order format
 
     # now classify the instruction and then check its format according to the class
     # of instructions it fits in based on the number of arguments..
@@ -73,7 +80,7 @@ def order_instructions(root):
     last = -1 
     for instr in root:
         order = int(instr.attrib['order'])
-        if order < 0 or order == last or order < counter:
+        if order < counter + 1 or order == last :
             raise Exception('Duplicit or invalid order attribute', order)
 
         # now let's rewrite the order numbers so that they correspond to the indexes

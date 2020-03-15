@@ -8,14 +8,7 @@ from xml.etree import ElementTree as ET
 import sys
 
 from xml_checks import *
-from execute import execute_program
-
-# TODO input check:
-# - well-formed
-# - check instruction elements + arguments for each instruction
-# - sort by ascending order and check for duplicit order values
-# - extract labels
-# - start executing
+from execute import Processor
 
 NOT_WELL_FORMED = 31
 XML_ERROR = 32 # pretty much all syntax, lexical and other input xml-fomat related errors
@@ -35,6 +28,7 @@ try:
 
 except Exception: sys.exit(XML_ERROR)
 
-#try: execute_program(program, labels)
-#except: sys.exit(42)
+processor = Processor(program, labels)
+try: processor.execute_program()
+except Exception as e: sys.exit(e[0])
 
