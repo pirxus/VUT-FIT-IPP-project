@@ -1,5 +1,5 @@
 ##
-# @file   xml_checks.py
+# @file   xml_checker.py
 # @author Simon Sedlacek, xsedla1h
 # @brief  This module implements functions used for checking the integrity of the
 #         input xml for the interpreter
@@ -60,7 +60,9 @@ def get_labels(root):
     for instr in root:
         if instr.attrib['opcode'] == 'LABEL':
 
-            if instr[0].text in labels: #FIXME is this the correct way to access an arg??
+            if instr[0].text in labels:
+                sys.stderr.write('Label redefinition\n')
+                sys.exit(52) #FIXME: proper exception propagation
                 raise Exception('Label redefinition', instr[0].text) # Label redefinition
 
             labels[instr[0].text] = instr.attrib['order'] # add the new label to the dict
@@ -105,7 +107,6 @@ def check_syntax(program):
         labels = get_labels(program) # extract the labels
 
     except Exception as e:
-        sys.stderr.write(e)
         raise e
 
     return ordered, labels

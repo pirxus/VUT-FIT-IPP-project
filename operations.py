@@ -5,7 +5,7 @@
 
 
 # This function returns the value and type of a variable
-def get_var_value_type(data, identifier):
+def get_var_type_value(data, identifier):
     tmp = identifier.split('@'); frame = tmp[0]; name = tmp[1]
 
     if frame == 'GF':
@@ -35,11 +35,11 @@ def get_var_value_type(data, identifier):
     else: raise Exception(32, 'XML: Invalid frame') # this should not happen...
 
     var_type = var[0]; value = var[1]
-    return value, var_type
+    return var_type, value
 
 
 # This function sets the value and type of a variable
-def set_var_value_type(data, destination, value, var_type):
+def set_var_type_value(data, destination, var_type, value):
     tmp = destination.split('@'); frame = tmp[0]; name = tmp[1]
 
     if frame == 'GF':
@@ -67,6 +67,21 @@ def set_var_value_type(data, destination, value, var_type):
             raise Exception(54, f'Nonexistent variable "{name}" in TF')
 
     else: raise Exception(32, 'XML: Invalid frame') # this should not happen...
+
+
+# This function returns the type and value of a symbol
+def get_symbol_type_value(data, symbol):
+    symbol_type = tmp.attrib['type']
+    symbol_value = tmp.text
+
+    # if the symbol is a variable, get its type and value
+    if symbol_type == 'var':
+        try: 
+            symbol_type, symbol_value = get_var_type_value(data, symbol_value)
+        except Exception as e:
+            raise e
+
+    return symbol_type, symbol_value
 
 
 # This class implements some  of the actual instructions of IPPcode20 as static methods.
@@ -128,21 +143,11 @@ class Operations:
     def MOVE(data):
         try:
             # just check if the destination exists
-            get_var_value_type(data, data.instr[0].text)
+            get_var_type_value(data, data.instr[0].text)
 
-            # get the source symbol properties
-            src = data.instr[1]
-            src_type = src['type']
-
-            # get the value and type of the source symbol
-            if symb_type == 'var':
-                src_value, src_var_type = get_var_value_type(data, src.text)
-            else: 
-                value_src = src.text
-                src_var_type = src_type
-
-            # write the value and type to the destination variable
-            set_var_value_type(data, data.instr[0].text, src_value, src_var_type)
+            # get the source symbol type and value and write them to the destination
+            src_typ, src_value = get_symbol_type_value(data, data.instr[1])
+            set_var_type_value(data, data.instr[0].text, src_type, src_value)
 
         except Exception as e:
             retcode, msg = e.args
@@ -152,7 +157,7 @@ class Operations:
     def CALL(data):
         data.ip_stack.append(data.ip + 1) # store the IP value
 
-        label = data.instr.text
+        label = data.instr[0].text
         if label in data.labels:
             data.ip = data.labels[label] # get the label position
 
@@ -169,52 +174,252 @@ class Operations:
     # Stack
     @staticmethod
     def PUSHS(data):
-        pass
+        try:
+            # get the symbol type and value
+            src_type, src_value = get_symbol_type_value(data, data.instr[0])
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'PUSHS: ' + msg)
+
+        # ... and push them onto the data stack
+        data.data_stack.append((src_type, src_value))
 
     @staticmethod
-    def POPS():
-        pass
+    def POPS(data):
+        try:
+            src_type, src_value = data.data_stack.pop()
+        except:
+            raise Exception(56, 'POPS: Data stack was empty')
+
+        try:
+            set_var_type_value(data, data.instr[0].text, src_type, src_value)
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'POPS: ' + msg)
 
     # Arithmethic, relation, boolean and conversion operations
     @staticmethod
-    def ADD():
-        pass
+    def ADD(data):
+        try:
+            # get the operand types and values
+            op1_type, op1_value = get_symbol_type_value(data, data.instr[1])
+            op2_type, op2_value = get_symbol_type_value(data, data.instr[2])
+
+            # check operand types
+            if op1_type == 'int' and op2_type == 'int':
+                # write the result of the operation
+                set_var_type_value(data, data.instr[0].text, 'int', op1_value + op2_value) 
+            else:
+                raise Exception(53, 'Both operands must be of type "int"')
+
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'ADD: ' + msg)
 
     @staticmethod
-    def SUB():
-        pass
+    def SUB(data):
+        try:
+            # get the operand types and values
+            op1_type, op1_value = get_symbol_type_value(data, data.instr[1])
+            op2_type, op2_value = get_symbol_type_value(data, data.instr[2])
+
+            # check operand types
+            if op1_type == 'int' and op2_type == 'int':
+                # write the result of the operation
+                set_var_type_value(data, data.instr[0].text, 'int', op1_value - op2_value) 
+            else:
+                raise Exception(53, 'Both operands must be of type "int"')
+
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'SUB: ' + msg)
 
     @staticmethod
-    def MUL():
-        pass
+    def MUL(data):
+        try:
+            # get the operand types and values
+            op1_type, op1_value = get_symbol_type_value(data, data.instr[1])
+            op2_type, op2_value = get_symbol_type_value(data, data.instr[2])
+
+            # check operand types
+            if op1_type == 'int' and op2_type == 'int':
+                # write the result of the operation
+                set_var_type_value(data, data.instr[0].text, 'int', op1_value * op2_value) 
+            else:
+                raise Exception(53, 'Both operands must be of type "int"')
+
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'MUL: ' + msg)
 
     @staticmethod
-    def IDIV():
-        pass
+    def IDIV(data):
+        try:
+            # get the operand types and values
+            op1_type, op1_value = get_symbol_type_value(data, data.instr[1])
+            op2_type, op2_value = get_symbol_type_value(data, data.instr[2])
+
+            # check operand types and other constraints
+            if op1_type != 'int' or op2_type != 'int':
+                raise Exception(53, 'Both operands must be of type "int"')
+            if op2_value == 0:
+                raise Exception(57, 'Division by zero')
+
+            # write the result of the operation
+            set_var_type_value(data, data.instr[0].text, 'int', op1_value // op2_value) 
+
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'IDIV: ' + msg)
 
     @staticmethod
-    def LT():
-        pass
+    def LT(data):
+        try:
+            # get the operand types and values
+            op1_type, op1_value = get_symbol_type_value(data, data.instr[1])
+            op2_type, op2_value = get_symbol_type_value(data, data.instr[2])
+
+            # check operand types and other constraints
+            if op1_type == op2_type and op1 != 'nil':
+                # perform the comparison
+                if op1_type in ['int', 'string']:
+                    result = 'true' if op1_value < op2_value else 'false'
+                elif op1_type == 'bool':
+                    if op1_value == 'false' and op2_value == 'true': result = 'true'
+                    else: result = 'false'
+                else:
+                    raise Exception(53, 'Operands incompatible for comparison')
+
+                # write the result of the operation
+                set_var_type_value(data, data.instr[0].text, 'bool', result)
+            else:
+                raise Exception(53, 'Operands incompatible for comparison')
+
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'LT: ' + msg)
 
     @staticmethod
-    def GT():
-        pass
+    def GT(data):
+        try:
+            # get the operand types and values
+            op1_type, op1_value = get_symbol_type_value(data, data.instr[1])
+            op2_type, op2_value = get_symbol_type_value(data, data.instr[2])
+
+            # check operand types and other constraints
+            if op1_type == op2_type and op1 != 'nil':
+                # perform the comparison
+                if op1_type in ['int', 'string']:
+                    result = 'true' if op1_value > op2_value else 'false'
+                elif op1_type == 'bool':
+                    if op1_value == 'true' and op2_value == 'false': result = 'true'
+                    else: result = 'false'
+                else:
+                    raise Exception(53, 'Operands incompatible for comparison')
+
+                # write the result of the operation
+                set_var_type_value(data, data.instr[0].text, 'bool', result)
+            else:
+                raise Exception(53, 'Operands incompatible for comparison')
+
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'GT: ' + msg)
 
     @staticmethod
-    def EQ():
-        pass
+    def EQ(data):
+        try:
+            # get the operand types and values
+            op1_type, op1_value = get_symbol_type_value(data, data.instr[1])
+            op2_type, op2_value = get_symbol_type_value(data, data.instr[2])
+
+            # check operand types and other constraints
+            if op1_type == op2_type:
+
+                # perform the comparison
+                if op1_type in ['int', 'string', 'bool', 'nil']:
+                    result = 'true' if op1_value == op2_value else 'false'
+                else:
+                    raise Exception(53, 'Operands incompatible for comparison')
+
+            elif op1_type == 'nil' or op2_type == 'nil':
+                result = 'false'
+            else:
+                raise Exception(53, 'Operands incompatible for comparison')
+
+            # write the result of the operation
+            set_var_type_value(data, data.instr[0].text, 'bool', result)
+
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'EQ: ' + msg)
 
     @staticmethod
-    def AND():
-        pass
+    def AND(data):
+        try:
+            # get the operand types and values
+            op1_type, op1_value = get_symbol_type_value(data, data.instr[1])
+            op2_type, op2_value = get_symbol_type_value(data, data.instr[2])
+
+            # check operand types and other constraints
+            if op1_type == 'bool' and  op2_type == 'bool':
+
+                # perform the operation
+                if op1_value == 'true' and op2_value == 'true': result = 'true'
+                else: result = 'false'
+            else:
+                raise Exception(53, 'Operands incompatible for logical operation')
+
+            # write the result of the operation
+            set_var_type_value(data, data.instr[0].text, 'bool', result)
+
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'AND: ' + msg)
 
     @staticmethod
-    def OR():
-        pass
+    def OR(data):
+        try:
+            # get the operand types and values
+            op1_type, op1_value = get_symbol_type_value(data, data.instr[1])
+            op2_type, op2_value = get_symbol_type_value(data, data.instr[2])
+
+            # check operand types and other constraints
+            if op1_type == 'bool' and  op2_type == 'bool':
+
+                # perform the operation
+                if op1_value == 'true' or op2_value == 'true': result = 'true'
+                else: result = 'false'
+            else:
+                raise Exception(53, 'Operands incompatible for logical operation')
+
+            # write the result of the operation
+            set_var_type_value(data, data.instr[0].text, 'bool', result)
+
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'OR: ' + msg)
 
     @staticmethod
-    def NOT(): # 2 arguments!!!
-        pass
+    def NOT(data):
+        try:
+            # get the operand type and value
+            op_type, op_value = get_symbol_type_value(data, data.instr[1])
+
+            # check operand types and other constraints
+            if op_type == 'bool':
+
+                # perform the operation
+                result = 'false' if op_value == 'true' else 'false'
+            else:
+                raise Exception(53, 'Operands incompatible for logical operation')
+
+            # write the result of the operation
+            set_var_type_value(data, data.instr[0].text, 'bool', result)
+
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'NOT: ' + msg)
 
     @staticmethod
     def INT2CHAR():
@@ -261,20 +466,32 @@ class Operations:
         pass
 
     @staticmethod
-    def JUMP():
-        pass
+    def JUMP(data):
+        label = data.instr[0].text
+        if label in data.labels:
+            data.ip = data.labels[label] # get the label position
+        else:
+            raise Exception(52, f'JUMP: Label "{label}" is undefined')
 
     @staticmethod
     def JUMPIFEQ():
-        pass
+        return False
 
     @staticmethod
     def JUMPIFNEQ():
-        pass
+        return False
 
     @staticmethod
-    def EXIT():
-        pass
+    def EXIT(data):
+        try:
+            op_type, retcode = get_symbol_type_value(data, data.instr[0])
+            if op_type != 'int' or retcode < 0 or retcode > 49:
+                raise Exception(57, 'Invalid return code')
+            return retcode
+
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'EXIT: ' + msg)
 
     # Debug
     @staticmethod

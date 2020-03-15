@@ -7,7 +7,7 @@
 from xml.etree import ElementTree as ET
 import sys
 
-from xml_checks import *
+from xml_checker import *
 from execute import Processor
 
 NOT_WELL_FORMED = 31
@@ -19,13 +19,13 @@ XML_ERROR = 32 # pretty much all syntax, lexical and other input xml-fomat relat
 if len(sys.argv) < 2: sys.exit(42)
 filename = sys.argv[1]
 
-try:
-    check_well_formed(filename)
-except Exception:
-    sys.exit(NOT_WELL_FORMED)
+# check if the input xml is well-formed
+try: check_well_formed(filename)
+except Exception: sys.exit(NOT_WELL_FORMED)
 
 program = ET.parse(filename).getroot()
 
+# perform the syntax and lexical analysis (plus some semantic checks) of the program
 try:
     program, labels = check_syntax(program)
 except Exception:
@@ -37,5 +37,5 @@ try:
     processor.execute_program()
 except Exception as e:
     retcode, message = e.args
-    sys.stderr.write(message)
-    sys.exit(e[0])
+    sys.stderr.write(message + '\n')
+    sys.exit(retcode)

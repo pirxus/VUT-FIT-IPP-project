@@ -12,6 +12,7 @@ class Processor:
         self.program = program
         self.labels = labels
 
+        self.data_stack = []
         self.ip_stack = [] # this list manages the return addresses for function calls
         self.global_frame = {} # a dictionary of variables in the GF
         self.local_frame = [] # a list of dictionaries of variables for each LF
@@ -32,7 +33,6 @@ class Processor:
 
     def process_instruction(self):
         opcode = self.instr['opcode']
-        
         try:
             if opcode == 'CREATEFRAME':
                 op.CREATEFRAME()
@@ -45,9 +45,9 @@ class Processor:
             elif opcode == 'MOVE':
                 op.MOVE()
             elif opcode == 'CALL':
-                op.CALL()
+                op.CALL(); continue
             elif opcode == 'RETURN':
-                op.RETURN()
+                op.RETURN(); continue
             #####################
             elif opcode == 'PUSHS':
                 op.PUSHS()
@@ -94,26 +94,18 @@ class Processor:
                 op.SETCHAR()
             #####################
             elif opcode == 'TYPE':
-                symb_type = op.TYPE(self)
+                op.TYPE(self)
             ##################### TODO: rework these following...
             elif opcode == 'LABEL':
-                pass
+                op.LABEL(self)
             elif opcode == 'JUMP':
-                self.ip = op.JUMP(self)
-                continue
+                op.JUMP(self); continue
             elif opcode == 'JUMPIFEQ':
-                jump, index = op.JUMPIFEQ(self)
-                if jump:
-                    self.ip = index
-                    continue
+                if op.JUMPIFEQ(self): continue
             elif opcode == 'JUMPIFNEQ':
-                jump, index = op.JUMPIFNEQ(self)
-                if jump:
-                    self.ip = index
-                    continue
+                if op.JUMPIFNEQ(self): continue
             elif opcode == 'EXIT':
-                retcode = op.EXIT(self)
-                sys.exit(retcode)
+                retcode = op.EXIT(self); sys.exit(retcode)
             #####################
             elif opcode == 'DPRINT':
                 op.DPRINT()
