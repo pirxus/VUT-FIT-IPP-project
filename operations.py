@@ -71,8 +71,8 @@ def set_var_type_value(data, destination, var_type, value):
 
 # This function returns the type and value of a symbol
 def get_symbol_type_value(data, symbol):
-    symbol_type = tmp.attrib['type']
-    symbol_value = tmp.text
+    symbol_type = symbol.attrib['type']
+    symbol_value = symbol.text
 
     # if the symbol is a variable, get its type and value
     if symbol_type == 'var':
@@ -111,7 +111,7 @@ class Operations:
     def POPFRAME(data):
         if data.tf_defined:
             data.local_frame.pop() # delete the redundant temporary frame
-        if data.lf_index = -1:
+        if data.lf_index == -1:
             raise Exception(55, 'POPFRAME: No available LF')
         data.lf_index -= 1
 
@@ -146,7 +146,7 @@ class Operations:
             get_var_type_value(data, data.instr[0].text)
 
             # get the source symbol type and value and write them to the destination
-            src_typ, src_value = get_symbol_type_value(data, data.instr[1])
+            src_type, src_value = get_symbol_type_value(data, data.instr[1])
             set_var_type_value(data, data.instr[0].text, src_type, src_value)
 
         except Exception as e:
@@ -422,43 +422,203 @@ class Operations:
             raise Exception(retcode, 'NOT: ' + msg)
 
     @staticmethod
-    def INT2CHAR():
-        pass
+    def INT2CHAR(data):
+        try:
+            # get the operand type and value
+            op_type, op_value = get_symbol_type_value(data, data.instr[1])
+
+            # check operand types and other constraints
+            if op_type == 'int':
+                try: char = chr(op_value)
+                except: raise Exception(58, 'Invalid ordinal value')
+            else:
+                raise Exception(53, 'Second operand has to be an integer')
+
+            # write the result of the operation
+            set_var_type_value(data, data.instr[0].text, 'string', char)
+
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'INT2CHAR: ' + msg)
 
     @staticmethod
-    def STRI2INT():
-        pass
+    def STRI2INT(data):
+        try:
+            # get the value and type of the operands
+            op1_type, op1_value = get_symbol_type_value(data, data.instr[1])
+            op2_type, op2_value = get_symbol_type_value(data, data.instr[2])
+
+            # check the operand types and store the char present on the specified position
+            if op1_type == 'string' and op2_type == 'int':
+                limit = len(op1_value)
+
+                if not (0 <= op2_value < limit):
+                    raise Exception(58, 'Index out of range')
+
+                set_var_type_value(data, data.instr[0].text, 'string',
+                        ord(op1_value[op2_value]))
+            else:
+                raise Exception(53, 'Invalid operand type')
+
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'STRI2INT: ' + msg)
 
     # I/O
     @staticmethod
-    def READ():
-        pass
+    def READ(data):
+        try:
+            # get the value and type of the operands
+            op_type, op_value = get_symbol_type_value(data, data.instr[1])
+
+            # check the operand types and store the char present on the specified position
+            if op_type == 'type' and op_value in ['int', 'string', 'bool']:
+                read = input()
+                if read == '':
+                    op_value = 'nil'
+                    read = 'nil'
+                else:
+                    if op_value == 'int':
+                        try:
+                            read = int(read)
+                        except:
+                            read = 'nil'
+                            op_value = 'nil'
+                    elif op_value == 'string':
+                        read = str(read)
+                    else: # bool
+                        if read.casefold() == 'true': read = 'true'
+                        else: read = 'false'
+
+                set_var_type_value(data, data.instr[0].text, op_value, read)
+            else:
+                raise Exception(53, 'Invalid operand type')
+
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'READ: ' + msg)
 
     @staticmethod
-    def WRITE():
-        pass
+    def WRITE(data):
+        try:
+            # get the value and type of the symbol
+            op_type, op_value = get_symbol_type_value(data, data.instr[0])
+            if op_type == 'nil':
+                op_value = ''
+            elif op_type in ['int', 'string', 'bool', None, '']: #FIXME: uninitialized?
+                pass
+            else:
+                raise Exception(53, 'Invalid operand type')
+            
+            # print out the symbol value
+            print(op_value, end='')
+
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'WRITE: ' + msg)
 
     # String manipulation
     @staticmethod
-    def CONCAT():
-        pass
+    def CONCAT(data):
+        try:
+            # get the value and type of the symbol
+            op1_type, op1_value = get_symbol_type_value(data, data.instr[1])
+            op2_type, op2_value = get_symbol_type_value(data, data.instr[2])
+
+            # concatenate the strings
+            if op1_type == 'string' and op2_type == 'string':
+                set_var_type_value(data, data.instr[0].text, 'string',
+                        op1_value + op2_value)
+            else:
+                raise Exception(53, 'Invalid operand type')
+
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'CONCAT: ' + msg)
 
     @staticmethod
-    def STRLEN():
-        pass
+    def STRLEN(data):
+        try:
+            # get the value and type of the symbol
+            op_type, op_value = get_symbol_type_value(data, data.instr[1])
+
+            # store the string length
+            if op1_type == 'string':
+                set_var_type_value(data, data.instr[0].text, 'int', len(op1_value))
+            else:
+                raise Exception(53, 'Invalid operand type')
+
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'STRLEN: ' + msg)
 
     @staticmethod
-    def GETCHAR():
-        pass
+    def GETCHAR(data):
+        try:
+            # get the value and type of the operands
+            op1_type, op1_value = get_symbol_type_value(data, data.instr[1])
+            op2_type, op2_value = get_symbol_type_value(data, data.instr[2])
+
+            # check the operand types and store the char present on the specified position
+            if op1_type == 'string' and op2_type == 'int':
+                limit = len(op1_value)
+
+                if not (0 <= op2_value < limit):
+                    raise Exception(58, 'Index out of range')
+
+                set_var_type_value(data, data.instr[0].text, 'string',
+                        op1_value[op2_value])
+            else:
+                raise Exception(53, 'Invalid operand type')
+
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'GETCHAR: ' + msg)
 
     @staticmethod
-    def SETCHAR():
-        pass
+    def SETCHAR(data):
+        try:
+            # get the value and type of the operands
+            var_type, var_value = get_var_type_value(data, data.instr[0].text)
+            op1_type, op1_value = get_symbol_type_value(data, data.instr[1])
+            op2_type, op2_value = get_symbol_type_value(data, data.instr[2])
+
+            # check the operand types and store the char present on the specified position
+            if var_type == 'string' and op1_type == 'int' and op2_type == 'string':
+                limit = len(var_value)
+
+                # check the constraints
+                if not (0 <= op1_value < limit) or len(op2_value) == 0:
+                    raise Exception(58, 'Index out of range')
+
+                var_value[index] = op2_value[0]
+                set_var_type_value(data, data.instr[0].text, 'string', var_value)
+            else:
+                raise Exception(53, 'Invalid operand type')
+
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'SETCHAR: ' + msg)
 
     # Type manipulation
     @staticmethod
-    def TYPE():
-        pass
+    def TYPE(data):
+        try:
+            op_type, op_value = get_symbol_type_value(data, data.instr[1])
+            if op_type == None or op_value == None:
+                op_type = ''
+            elif op_type in ['int', 'string', 'bool', 'nil']:
+                op_value = op_type
+                op_type = 'string'
+            else:
+                raise Exception(53, 'Invalid operand type')
+
+            # write the type to the variable
+            set_var_type_value(data, data.instr[0].text, op_type, op_value)
+            
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'TYPE: ' + msg)
 
     # Program flow control
     @staticmethod
@@ -474,12 +634,78 @@ class Operations:
             raise Exception(52, f'JUMP: Label "{label}" is undefined')
 
     @staticmethod
-    def JUMPIFEQ():
-        return False
+    def JUMPIFEQ(data):
+        try:
+            # get the operand types and values
+            op1_type, op1_value = get_symbol_type_value(data, data.instr[1])
+            op2_type, op2_value = get_symbol_type_value(data, data.instr[2])
+
+            # check operand types and other constraints
+            if op1_type == op2_type:
+
+                # perform the comparison
+                if op1_type in ['int', 'string', 'bool', 'nil']:
+                    result = 'true' if op1_value == op2_value else 'false'
+                else:
+                    raise Exception(53, 'Operands incompatible for comparison')
+
+            elif op1_type == 'nil' or op2_type == 'nil':
+                result = 'false'
+            else:
+                raise Exception(53, 'Operands incompatible for comparison')
+
+            # perform the jump
+            if result == 'true':
+                label = data.instr[0].text
+                if label in data.labels:
+                    data.ip = data.labels[label] # get the label position
+                else:
+                    raise Exception(52, f'JUMP: Label "{label}" is undefined')
+                return True
+
+            else:
+                return False # let the processor know the jump will take place
+
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'EQ: ' + msg)
 
     @staticmethod
-    def JUMPIFNEQ():
-        return False
+    def JUMPIFNEQ(data):
+        try:
+            # get the operand types and values
+            op1_type, op1_value = get_symbol_type_value(data, data.instr[1])
+            op2_type, op2_value = get_symbol_type_value(data, data.instr[2])
+
+            # check operand types and other constraints
+            if op1_type == op2_type:
+
+                # perform the comparison
+                if op1_type in ['int', 'string', 'bool', 'nil']:
+                    result = 'true' if op1_value == op2_value else 'false'
+                else:
+                    raise Exception(53, 'Operands incompatible for comparison')
+
+            elif op1_type == 'nil' or op2_type == 'nil':
+                result = 'false'
+            else:
+                raise Exception(53, 'Operands incompatible for comparison')
+
+            # perform the jump
+            if result == 'false':
+                label = data.instr[0].text
+                if label in data.labels:
+                    data.ip = data.labels[label] # get the label position
+                else:
+                    raise Exception(52, f'JUMP: Label "{label}" is undefined')
+                return True
+
+            else:
+                return False # let the processor know the jump will take place
+
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'EQ: ' + msg)
 
     @staticmethod
     def EXIT(data):
@@ -495,9 +721,9 @@ class Operations:
 
     # Debug
     @staticmethod
-    def DPRINT():
+    def DPRINT(data):
         pass
 
     @staticmethod
-    def BREAK():
+    def BREAK(data):
         pass

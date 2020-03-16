@@ -5,6 +5,7 @@
 
 from xml.etree import ElementTree as ET
 from operations import Operations as op
+import sys
 
 # This class as an instruction processor and is responsible for the program execution
 class Processor:
@@ -24,93 +25,94 @@ class Processor:
 
     def execute_program(self):
         # main processing loop
-        while True:
-            self.instr = program[ip] # load the next instruction
+        program_len = len(self.program)
+        while self.ip < program_len:
+            self.instr = self.program[self.ip] # load the next instruction
             try:
                 self.process_instruction()
             except Exception as e:
                 raise e
 
     def process_instruction(self):
-        opcode = self.instr['opcode']
+        opcode = self.instr.attrib['opcode']
         try:
             if opcode == 'CREATEFRAME':
-                op.CREATEFRAME()
+                op.CREATEFRAME(self)
             elif opcode == 'PUSHFRAME':
-                op.PUSHFRAME()
+                op.PUSHFRAME(self)
             elif opcode == 'POPFRAME':
-                op.POPFRAME()
+                op.POPFRAME(self)
             elif opcode == 'DEFVAR':
-                op.DEFVAR()
+                op.DEFVAR(self)
             elif opcode == 'MOVE':
-                op.MOVE()
+                op.MOVE(self)
             elif opcode == 'CALL':
-                op.CALL(); continue
+                op.CALL(self); return
             elif opcode == 'RETURN':
-                op.RETURN(); continue
+                op.RETURN(self); return
             #####################
             elif opcode == 'PUSHS':
-                op.PUSHS()
+                op.PUSHS(self)
             elif opcode == 'POPS':
-                op.POPS()
+                op.POPS(self)
             #####################
             elif opcode == 'ADD':
-                op.ADD()
+                op.ADD(self)
             elif opcode == 'SUB':
-                op.SUB()
+                op.SUB(self)
             elif opcode == 'MUL':
-                op.MUL()
+                op.MUL(self)
             elif opcode == 'IDIV':
-                op.IDIV()
+                op.IDIV(self)
             elif opcode == 'LT':
-                op.LT()
+                op.LT(self)
             elif opcode == 'GT':
-                op.GT()
+                op.GT(self)
             elif opcode == 'EQ':
-                op.EQ()
+                op.EQ(self)
             elif opcode == 'AND':
-                op.AND()
+                op.AND(self)
             elif opcode == 'OR':
-                op.OR()
+                op.OR(self)
             elif opcode == 'NOT':
-                op.NOT()
+                op.NOT(self)
             elif opcode == 'INT2CHAR':
-                op.INT2CHAR()
+                op.INT2CHAR(self)
             elif opcode == 'STRI2INT':
-                op.STRI2INT()
+                op.STRI2INT(self)
             #####################
             elif opcode == 'READ':
-                op.READ()
+                op.READ(self)
             elif opcode == 'WRITE':
-                op.WRITE()
+                op.WRITE(self)
             #####################
             elif opcode == 'CONCAT':
-                op.CONCAT()
+                op.CONCAT(self)
             elif opcode == 'STRLEN':
-                op.STRLEN()
+                op.STRLEN(self)
             elif opcode == 'GETCHAR':
-                op.GETCHAR()
+                op.GETCHAR(self)
             elif opcode == 'SETCHAR':
-                op.SETCHAR()
+                op.SETCHAR(self)
             #####################
             elif opcode == 'TYPE':
                 op.TYPE(self)
             ##################### TODO: rework these following...
             elif opcode == 'LABEL':
-                op.LABEL(self)
+                op.LABEL()
             elif opcode == 'JUMP':
-                op.JUMP(self); continue
+                op.JUMP(self); return
             elif opcode == 'JUMPIFEQ':
-                if op.JUMPIFEQ(self): continue
+                if op.JUMPIFEQ(self): return
             elif opcode == 'JUMPIFNEQ':
-                if op.JUMPIFNEQ(self): continue
+                if op.JUMPIFNEQ(self): return
             elif opcode == 'EXIT':
                 retcode = op.EXIT(self); sys.exit(retcode)
             #####################
             elif opcode == 'DPRINT':
-                op.DPRINT()
+                op.DPRINT(self)
             elif opcode == 'BREAK':
-                op.BREAK()
+                op.BREAK(self)
 
             else:
                 raise Exception(32, 'Unknown opcode') # this should not happen...
