@@ -28,7 +28,8 @@ program = ET.parse(filename).getroot()
 # perform the syntax and lexical analysis (plus some semantic checks) of the program
 try:
     program, labels = check_syntax(program)
-except Exception:
+except Exception as e:
+    sys.stderr.write(str(e.args) + '\n')
     sys.exit(XML_ERROR)
 
 # now execute the program
