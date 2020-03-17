@@ -9,7 +9,8 @@ import sys
 
 # This class as an instruction processor and is responsible for the program execution
 class Processor:
-    def __init__(self, program, labels):
+    def __init__(self, program, labels, input_file):
+        self.input_file = input_file # user input file
         self.program = program
         self.labels = labels
 

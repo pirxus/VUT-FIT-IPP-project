@@ -6,8 +6,6 @@
 
 
 from xml.etree import ElementTree as ET
-from xml.sax.handler import ContentHandler
-from xml.sax import make_parser
 import sys
 import re
 
@@ -25,7 +23,7 @@ def check_instructions(root):
 def check_instruction(instr):
     if (instr.tag != 'instruction' or
             set(instr.attrib.keys()) != {'opcode', 'order'}):
-        raise Exception('Invalid top level element/instruction format')
+        raise Exception('Invalid top level element/instruction format', instr)
     
     # check the order attribute format and value
     try:
@@ -156,17 +154,8 @@ def check_syntax(program):
     return ordered, labels
 
 
-# check the xml file well-formed-ness
-def check_well_formed(filename):
-    try:
-        well_formed_parser = make_parser()
-        well_formed_parser.setContentHandler(ContentHandler())
-        well_formed_parser.parse(filename)
-    except Exception:
-        sys.stderr.write(f'Input file {filename} is not a well-formed XML\n')
-        raise Exception
-
-
+# This class implements some methods used for checking the format of the individual
+# instruction arguments
 class ArgChecks:
 
     # specific argument types
@@ -214,7 +203,7 @@ class ArgChecks:
             return True
         return False
 
-    # general argument types
+    # more general argument types
     @staticmethod
     def check_var(var):
         if (len(var.attrib) == 1 and 'type' in var.attrib and

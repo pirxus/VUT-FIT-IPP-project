@@ -473,7 +473,7 @@ class Operations:
 
             # check the operand types and store the char present on the specified position
             if op_type == 'type' and op_value in ['int', 'string', 'bool']:
-                read = input()
+                read = data.input_file.readline()[:-1] # read one line of input
                 if read == '':
                     op_value = 'nil'
                     read = 'nil'
