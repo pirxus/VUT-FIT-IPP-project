@@ -34,8 +34,9 @@ def check_instruction(instr):
         raise Exception('Invalid order attribute format', instr.attrib['order'])
 
     # now classify the instruction and then check its args according to the class
-    # of instructions it fits in based on the number of arguments..
-    opcode = instr.attrib['opcode']
+    # of instructions it fits in based on the number of arguments. Additionally, if
+    # the original opcode was in mixed case, convert it to upper case..
+    opcode = instr.attrib['opcode'] = instr.attrib['opcode'].upper()
 
     # before checking the arguments, sort the in ascending order (arg1, arg2, ...)
     instr[:] = sorted(instr, key=lambda child: child.tag)
