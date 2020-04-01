@@ -114,6 +114,7 @@ class Operations:
         if data.lf_index == -1:
             raise Exception(55, 'POPFRAME: No available LF')
         data.lf_index -= 1
+        data.tf_defined = True
 
     @staticmethod
     def DEFVAR(data):
@@ -126,12 +127,16 @@ class Operations:
                 data.global_frame[name] = [None, None] # [type=None, value=None]
 
         elif frame == 'LF':
+            if data.lf_index == -1:
+                raise Exception(55, 'DEFVAR: LF does not exist')
             if name in data.local_frame[data.lf_index]:
                 raise Exception(52, 'DEFVAR: Variable already defined in LF')
             else:
                 data.local_frame[data.lf_index][name] = [None, None]
 
         elif frame == 'TF':
+            if not data.tf_defined:
+                raise Exception(55, 'DEFVAR: TF is undefined')
             if name in data.local_frame[data.lf_index + 1]:
                 raise Exception(52, 'DEFVAR: Variable already defined in TF')
             else:
@@ -147,6 +152,8 @@ class Operations:
 
             # get the source symbol type and value and write them to the destination
             src_type, src_value = get_symbol_type_value(data, data.instr[1])
+            if src_type == None:
+                raise Exception(56, 'Uninitialized symbol')
             set_var_type_value(data, data.instr[0].text, src_type, src_value)
 
         except Exception as e:
@@ -177,6 +184,8 @@ class Operations:
         try:
             # get the symbol type and value
             src_type, src_value = get_symbol_type_value(data, data.instr[0])
+            if src_type == None:
+                raise Exception(56, 'Uninitialized symbol')
         except Exception as e:
             retcode, msg = e.args
             raise Exception(retcode, 'PUSHS: ' + msg)
@@ -209,6 +218,8 @@ class Operations:
             if op1_type == 'int' and op2_type == 'int':
                 # write the result of the operation
                 set_var_type_value(data, data.instr[0].text, 'int', op1_value + op2_value) 
+            elif op1_type == None or op2_type == None:
+                raise Exception(56, 'Uninitialized symbol')
             else:
                 raise Exception(53, 'Both operands must be of type "int"')
 
@@ -227,6 +238,8 @@ class Operations:
             if op1_type == 'int' and op2_type == 'int':
                 # write the result of the operation
                 set_var_type_value(data, data.instr[0].text, 'int', op1_value - op2_value) 
+            elif op1_type == None or op2_type == None:
+                raise Exception(56, 'Uninitialized symbol')
             else:
                 raise Exception(53, 'Both operands must be of type "int"')
 
@@ -245,6 +258,8 @@ class Operations:
             if op1_type == 'int' and op2_type == 'int':
                 # write the result of the operation
                 set_var_type_value(data, data.instr[0].text, 'int', op1_value * op2_value) 
+            elif op1_type == None or op2_type == None:
+                raise Exception(56, 'Uninitialized symbol')
             else:
                 raise Exception(53, 'Both operands must be of type "int"')
 
@@ -260,13 +275,16 @@ class Operations:
             op2_type, op2_value = get_symbol_type_value(data, data.instr[2])
 
             # check operand types and other constraints
-            if op1_type != 'int' or op2_type != 'int':
+            if op1_type == 'int' and op2_type == 'int':
+                if op2_value == 0:
+                    raise Exception(57, 'Division by zero')
+                # write the result of the operation
+                set_var_type_value(data, data.instr[0].text, 'int', op1_value // op2_value) 
+            elif op1_type == None or op2_type == None:
+                raise Exception(56, 'Uninitialized symbol')
+            else:
                 raise Exception(53, 'Both operands must be of type "int"')
-            if op2_value == 0:
-                raise Exception(57, 'Division by zero')
 
-            # write the result of the operation
-            set_var_type_value(data, data.instr[0].text, 'int', op1_value // op2_value) 
 
         except Exception as e:
             retcode, msg = e.args
@@ -280,7 +298,9 @@ class Operations:
             op2_type, op2_value = get_symbol_type_value(data, data.instr[2])
 
             # check operand types and other constraints
-            if op1_type == op2_type and op1 != 'nil':
+            if op1_type == None or op2_type == None:
+                raise Exception(56, 'Uninitialized symbol')
+            elif op1_type == op2_type and op1_type != 'nil':
                 # perform the comparison
                 if op1_type in ['int', 'string']:
                     result = 'true' if op1_value < op2_value else 'false'
@@ -307,7 +327,9 @@ class Operations:
             op2_type, op2_value = get_symbol_type_value(data, data.instr[2])
 
             # check operand types and other constraints
-            if op1_type == op2_type and op1 != 'nil':
+            if op1_type == None or op2_type == None:
+                raise Exception(56, 'Uninitialized symbol')
+            elif op1_type == op2_type and op1_type != 'nil':
                 # perform the comparison
                 if op1_type in ['int', 'string']:
                     result = 'true' if op1_value > op2_value else 'false'
@@ -334,6 +356,8 @@ class Operations:
             op2_type, op2_value = get_symbol_type_value(data, data.instr[2])
 
             # check operand types and other constraints
+            if op1_type == None or op2_type == None:
+                raise Exception(56, 'Uninitialized symbol')
             if op1_type == op2_type:
 
                 # perform the comparison
@@ -367,6 +391,8 @@ class Operations:
                 # perform the operation
                 if op1_value == 'true' and op2_value == 'true': result = 'true'
                 else: result = 'false'
+            elif op1_type == None or op2_type == None:
+                raise Exception(56, 'Uninitialized symbol')
             else:
                 raise Exception(53, 'Operands incompatible for logical operation')
 
@@ -390,6 +416,8 @@ class Operations:
                 # perform the operation
                 if op1_value == 'true' or op2_value == 'true': result = 'true'
                 else: result = 'false'
+            elif op1_type == None or op2_type == None:
+                raise Exception(56, 'Uninitialized symbol')
             else:
                 raise Exception(53, 'Operands incompatible for logical operation')
 
@@ -410,7 +438,9 @@ class Operations:
             if op_type == 'bool':
 
                 # perform the operation
-                result = 'false' if op_value == 'true' else 'false'
+                result = 'false' if op_value == 'true' else 'true'
+            elif op_type == None:
+                raise Exception(56, 'Uninitialized symbol')
             else:
                 raise Exception(53, 'Operands incompatible for logical operation')
 
@@ -431,6 +461,8 @@ class Operations:
             if op_type == 'int':
                 try: char = chr(op_value)
                 except: raise Exception(58, 'Invalid ordinal value')
+            elif op_type == None:
+                raise Exception(56, 'Uninitialized symbol')
             else:
                 raise Exception(53, 'Second operand has to be an integer')
 
@@ -455,8 +487,10 @@ class Operations:
                 if not (0 <= op2_value < limit):
                     raise Exception(58, 'Index out of range')
 
-                set_var_type_value(data, data.instr[0].text, 'string',
+                set_var_type_value(data, data.instr[0].text, 'int',
                         ord(op1_value[op2_value]))
+            elif op1_type == None or op2_type == None:
+                raise Exception(56, 'Uninitialized symbol')
             else:
                 raise Exception(53, 'Invalid operand type')
 
@@ -473,11 +507,12 @@ class Operations:
 
             # check the operand types and store the char present on the specified position
             if op_type == 'type' and op_value in ['int', 'string', 'bool']:
-                read = data.input_file.readline()[:-1] # read one line of input
+                read = data.input_file.readline() # read one line of input
                 if read == '':
                     op_value = 'nil'
                     read = 'nil'
                 else:
+                    if read[-1] == '\n': read = read[:-1] # cut the trailing newline
                     if op_value == 'int':
                         try:
                             read = int(read)
@@ -505,8 +540,10 @@ class Operations:
             op_type, op_value = get_symbol_type_value(data, data.instr[0])
             if op_type == 'nil':
                 op_value = ''
-            elif op_type in ['int', 'string', 'bool', None, '']: #FIXME: uninitialized?
+            elif op_type in ['int', 'string', 'bool']:
                 pass
+            elif op_type == None:
+                raise Exception(56, 'Uninitialized symbol')
             else:
                 raise Exception(53, 'Invalid operand type')
             
@@ -529,6 +566,8 @@ class Operations:
             if op1_type == 'string' and op2_type == 'string':
                 set_var_type_value(data, data.instr[0].text, 'string',
                         op1_value + op2_value)
+            elif op1_type == None or op2_type == None:
+                raise Exception(56, 'Uninitialized symbol')
             else:
                 raise Exception(53, 'Invalid operand type')
 
@@ -543,8 +582,10 @@ class Operations:
             op_type, op_value = get_symbol_type_value(data, data.instr[1])
 
             # store the string length
-            if op1_type == 'string':
-                set_var_type_value(data, data.instr[0].text, 'int', len(op1_value))
+            if op_type == 'string':
+                set_var_type_value(data, data.instr[0].text, 'int', len(op_value))
+            elif op_type == None:
+                raise Exception(56, 'Uninitialized symbol')
             else:
                 raise Exception(53, 'Invalid operand type')
 
@@ -568,6 +609,8 @@ class Operations:
 
                 set_var_type_value(data, data.instr[0].text, 'string',
                         op1_value[op2_value])
+            elif op1_type == None or op2_type == None:
+                raise Exception(56, 'Uninitialized symbol')
             else:
                 raise Exception(53, 'Invalid operand type')
 
@@ -591,8 +634,10 @@ class Operations:
                 if not (0 <= op1_value < limit) or len(op2_value) == 0:
                     raise Exception(58, 'Index out of range')
 
-                var_value[index] = op2_value[0]
+                var_value =  var_value[:op1_value] + op2_value[0] + var_value[op1_value+1:]
                 set_var_type_value(data, data.instr[0].text, 'string', var_value)
+            elif op1_type == None or op2_type == None or var_type == None:
+                raise Exception(56, 'Uninitialized symbol')
             else:
                 raise Exception(53, 'Invalid operand type')
 
@@ -606,7 +651,8 @@ class Operations:
         try:
             op_type, op_value = get_symbol_type_value(data, data.instr[1])
             if op_type == None or op_value == None:
-                op_type = ''
+                op_value = ''
+                op_type = 'string'
             elif op_type in ['int', 'string', 'bool', 'nil']:
                 op_value = op_type
                 op_type = 'string'
@@ -641,7 +687,9 @@ class Operations:
             op2_type, op2_value = get_symbol_type_value(data, data.instr[2])
 
             # check operand types and other constraints
-            if op1_type == op2_type:
+            if op1_type == None or op2_type == None:
+                raise Exception(56, 'Uninitialized symbol')
+            elif op1_type == op2_type:
 
                 # perform the comparison
                 if op1_type in ['int', 'string', 'bool', 'nil']:
@@ -654,13 +702,14 @@ class Operations:
             else:
                 raise Exception(53, 'Operands incompatible for comparison')
 
+            # test the label existence
+            label = data.instr[0].text
+            if label not in data.labels:
+                raise Exception(52, f'Label "{label}" is undefined')
+
             # perform the jump
             if result == 'true':
-                label = data.instr[0].text
-                if label in data.labels:
-                    data.ip = data.labels[label] # get the label position
-                else:
-                    raise Exception(52, f'JUMP: Label "{label}" is undefined')
+                data.ip = data.labels[label] # get the label position
                 return True
 
             else:
@@ -668,7 +717,7 @@ class Operations:
 
         except Exception as e:
             retcode, msg = e.args
-            raise Exception(retcode, 'EQ: ' + msg)
+            raise Exception(retcode, 'JUMPIFEQ: ' + msg)
 
     @staticmethod
     def JUMPIFNEQ(data):
@@ -678,6 +727,8 @@ class Operations:
             op2_type, op2_value = get_symbol_type_value(data, data.instr[2])
 
             # check operand types and other constraints
+            if op1_type == None or op2_type == None:
+                raise Exception(56, 'Uninitialized symbol')
             if op1_type == op2_type:
 
                 # perform the comparison
@@ -691,13 +742,14 @@ class Operations:
             else:
                 raise Exception(53, 'Operands incompatible for comparison')
 
+            # test the label existence
+            label = data.instr[0].text
+            if label not in data.labels:
+                raise Exception(52, f'Label "{label}" is undefined')
+
             # perform the jump
             if result == 'false':
-                label = data.instr[0].text
-                if label in data.labels:
-                    data.ip = data.labels[label] # get the label position
-                else:
-                    raise Exception(52, f'JUMP: Label "{label}" is undefined')
+                data.ip = data.labels[label] # get the label position
                 return True
 
             else:
@@ -705,13 +757,17 @@ class Operations:
 
         except Exception as e:
             retcode, msg = e.args
-            raise Exception(retcode, 'EQ: ' + msg)
+            raise Exception(retcode, 'JUMPIFNEQ: ' + msg)
 
     @staticmethod
     def EXIT(data):
         try:
             op_type, retcode = get_symbol_type_value(data, data.instr[0])
-            if op_type != 'int' or retcode < 0 or retcode > 49:
+            if op_type == None:
+                raise Exception(56, 'Uninitialized symbol')
+            elif op_type != 'int':
+                raise Exception(53, 'Invalid return code type')
+            elif retcode < 0 or retcode > 49 or not isinstance(retcode, int):
                 raise Exception(57, 'Invalid return code')
             return retcode
 

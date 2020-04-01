@@ -111,7 +111,7 @@ class Test {
                                 $fail = True;
                                 $rc_expected = 0;
                                 $message = 'parsing failed';
-                            } else {
+                            } else { // FIXME
                                 exec('php '.$this->parser.' <'.$path.$file.' | python3 '.$this->interpreter.' --input='.$path.substr($file, 0, -4).'.in'.' >'.$tmp_out. ' 2>'.'/dev/null', $output, $rc_actual);
                                 $fail = False;
                             }

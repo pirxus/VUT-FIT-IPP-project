@@ -173,6 +173,16 @@ class ArgChecks:
     def check_arg_string(arg):
         if (len(arg.attrib) == 1 and 'type' in arg.attrib and
                 arg.attrib['type'] == 'string'):
+            if arg.text == None: # in case the text attribute is empty
+                arg.text = ''
+
+            # convert the escape sequences
+            esc_match = re.compile(r'\\[0-9]{3}')
+            match = re.findall(esc_match, arg.text)
+            for esc in match:
+                try: arg.text = arg.text.replace(esc, chr(int(esc[1:])), 1)
+                except: return False # not a escape sequence
+
             try: arg.text = str(arg.text)
             except:
                 return False # not a valid string
