@@ -100,7 +100,7 @@ class Operations:
             data.tf_defined = True
 
     @staticmethod
-    def PUSHFRAME(data): # FIXME: pushframe when tf_defined is False????
+    def PUSHFRAME(data):
         if data.tf_defined:
             data.lf_index += 1
             data.tf_defined = False
@@ -206,6 +206,11 @@ class Operations:
             retcode, msg = e.args
             raise Exception(retcode, 'POPS: ' + msg)
 
+    @staticmethod
+    def CLEARS(data):
+        # clear the data stack
+        data.data_stack.clear()
+
     # Arithmethic, relation, boolean and conversion operations
     @staticmethod
     def ADD(data):
@@ -228,6 +233,29 @@ class Operations:
             raise Exception(retcode, 'ADD: ' + msg)
 
     @staticmethod
+    def ADDS(data):
+        try:
+            try:
+                # get the operand types and values
+                op2_type, op2_value = data.data_stack.pop()
+                op1_type, op1_value = data.data_stack.pop()
+            except:
+                raise Exception(56, 'Empty data stack')
+
+            # check operand types
+            if op1_type == 'int' and op2_type == 'int':
+                # ... and push the result of the operation onto the data stack
+                data.data_stack.append((op1_type, op1_value + op2_value))
+            elif op1_type == None or op2_type == None: # this should probably not happen..
+                raise Exception(56, 'Uninitialized symbol')
+            else:
+                raise Exception(53, 'Both operands must be of type "int"')
+
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'ADDS: ' + msg)
+
+    @staticmethod
     def SUB(data):
         try:
             # get the operand types and values
@@ -248,6 +276,29 @@ class Operations:
             raise Exception(retcode, 'SUB: ' + msg)
 
     @staticmethod
+    def SUBS(data):
+        try:
+            try:
+                # get the operand types and values
+                op2_type, op2_value = data.data_stack.pop()
+                op1_type, op1_value = data.data_stack.pop()
+            except:
+                raise Exception(56, 'Empty data stack')
+
+            # check operand types
+            if op1_type == 'int' and op2_type == 'int':
+                # ... and push the result of the operation onto the data stack
+                data.data_stack.append((op1_type, op1_value - op2_value))
+            elif op1_type == None or op2_type == None: # this should probably not happen..
+                raise Exception(56, 'Uninitialized symbol')
+            else:
+                raise Exception(53, 'Both operands must be of type "int"')
+
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'SUBS: ' + msg)
+
+    @staticmethod
     def MUL(data):
         try:
             # get the operand types and values
@@ -266,6 +317,29 @@ class Operations:
         except Exception as e:
             retcode, msg = e.args
             raise Exception(retcode, 'MUL: ' + msg)
+
+    @staticmethod
+    def MULS(data):
+        try:
+            try:
+                # get the operand types and values
+                op2_type, op2_value = data.data_stack.pop()
+                op1_type, op1_value = data.data_stack.pop()
+            except:
+                raise Exception(56, 'Empty data stack')
+
+            # check operand types
+            if op1_type == 'int' and op2_type == 'int':
+                # ... and push the result of the operation onto the data stack
+                data.data_stack.append((op1_type, op1_value * op2_value))
+            elif op1_type == None or op2_type == None: # this should probably not happen..
+                raise Exception(56, 'Uninitialized symbol')
+            else:
+                raise Exception(53, 'Both operands must be of type "int"')
+
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'MULS: ' + msg)
 
     @staticmethod
     def IDIV(data):
@@ -289,6 +363,29 @@ class Operations:
         except Exception as e:
             retcode, msg = e.args
             raise Exception(retcode, 'IDIV: ' + msg)
+
+    @staticmethod
+    def IDIVS(data):
+        try:
+            try:
+                # get the operand types and values
+                op2_type, op2_value = data.data_stack.pop()
+                op1_type, op1_value = data.data_stack.pop()
+            except:
+                raise Exception(56, 'Empty data stack')
+
+            # check operand types
+            if op1_type == 'int' and op2_type == 'int':
+                # ... and push the result of the operation onto the data stack
+                data.data_stack.append((op1_type, op1_value // op2_value))
+            elif op1_type == None or op2_type == None: # this should probably not happen..
+                raise Exception(56, 'Uninitialized symbol')
+            else:
+                raise Exception(53, 'Both operands must be of type "int"')
+
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'IDIVS: ' + msg)
 
     @staticmethod
     def LT(data):
@@ -320,6 +417,38 @@ class Operations:
             raise Exception(retcode, 'LT: ' + msg)
 
     @staticmethod
+    def LTS(data):
+        try:
+            try:
+                # get the operand types and values
+                op2_type, op2_value = data.data_stack.pop()
+                op1_type, op1_value = data.data_stack.pop()
+            except:
+                raise Exception(56, 'Empty data stack')
+
+            # check operand types and other constraints
+            if op1_type == None or op2_type == None:
+                raise Exception(56, 'Uninitialized symbol')
+            elif op1_type == op2_type and op1_type != 'nil':
+                # perform the comparison
+                if op1_type in ['int', 'string']:
+                    result = 'true' if op1_value < op2_value else 'false'
+                elif op1_type == 'bool':
+                    if op1_value == 'false' and op2_value == 'true': result = 'true'
+                    else: result = 'false'
+                else:
+                    raise Exception(53, 'Operands incompatible for comparison')
+
+                # push the result back onto the stack
+                data.data_stack.append(('bool', result))
+            else:
+                raise Exception(53, 'Operands incompatible for comparison')
+
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'LTS: ' + msg)
+
+    @staticmethod
     def GT(data):
         try:
             # get the operand types and values
@@ -347,6 +476,38 @@ class Operations:
         except Exception as e:
             retcode, msg = e.args
             raise Exception(retcode, 'GT: ' + msg)
+
+    @staticmethod
+    def GTS(data):
+        try:
+            try:
+                # get the operand types and values
+                op2_type, op2_value = data.data_stack.pop()
+                op1_type, op1_value = data.data_stack.pop()
+            except:
+                raise Exception(56, 'Empty data stack')
+
+            # check operand types and other constraints
+            if op1_type == None or op2_type == None:
+                raise Exception(56, 'Uninitialized symbol')
+            elif op1_type == op2_type and op1_type != 'nil':
+                # perform the comparison
+                if op1_type in ['int', 'string']:
+                    result = 'true' if op1_value > op2_value else 'false'
+                elif op1_type == 'bool':
+                    if op1_value == 'true' and op2_value == 'false': result = 'true'
+                    else: result = 'false'
+                else:
+                    raise Exception(53, 'Operands incompatible for comparison')
+
+                # push the result back onto the stack
+                data.data_stack.append(('bool', result))
+            else:
+                raise Exception(53, 'Operands incompatible for comparison')
+
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'GTS: ' + msg)
 
     @staticmethod
     def EQ(data):
@@ -379,6 +540,39 @@ class Operations:
             raise Exception(retcode, 'EQ: ' + msg)
 
     @staticmethod
+    def EQS(data):
+        try:
+            try:
+                # get the operand types and values
+                op2_type, op2_value = data.data_stack.pop()
+                op1_type, op1_value = data.data_stack.pop()
+            except:
+                raise Exception(56, 'Empty data stack')
+
+            # check operand types and other constraints
+            if op1_type == None or op2_type == None:
+                raise Exception(56, 'Uninitialized symbol')
+            if op1_type == op2_type:
+
+                # perform the comparison
+                if op1_type in ['int', 'string', 'bool', 'nil']:
+                    result = 'true' if op1_value == op2_value else 'false'
+                else:
+                    raise Exception(53, 'Operands incompatible for comparison')
+
+            elif op1_type == 'nil' or op2_type == 'nil':
+                result = 'false'
+            else:
+                raise Exception(53, 'Operands incompatible for comparison')
+
+            # push the result back onto the stack
+            data.data_stack.append(('bool', result))
+
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'EQS: ' + msg)
+
+    @staticmethod
     def AND(data):
         try:
             # get the operand types and values
@@ -402,6 +596,34 @@ class Operations:
         except Exception as e:
             retcode, msg = e.args
             raise Exception(retcode, 'AND: ' + msg)
+
+    @staticmethod
+    def ANDS(data):
+        try:
+            try:
+                # get the operand types and values
+                op2_type, op2_value = data.data_stack.pop()
+                op1_type, op1_value = data.data_stack.pop()
+            except:
+                raise Exception(56, 'Empty data stack')
+
+            # check operand types and other constraints
+            if op1_type == 'bool' and  op2_type == 'bool':
+
+                # perform the operation
+                if op1_value == 'true' and op2_value == 'true': result = 'true'
+                else: result = 'false'
+            elif op1_type == None or op2_type == None:
+                raise Exception(56, 'Uninitialized symbol')
+            else:
+                raise Exception(53, 'Operands incompatible for logical operation')
+
+            # push the result back onto the stack
+            data.data_stack.append(('bool', result))
+
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'ANDS: ' + msg)
 
     @staticmethod
     def OR(data):
@@ -429,6 +651,34 @@ class Operations:
             raise Exception(retcode, 'OR: ' + msg)
 
     @staticmethod
+    def ORS(data):
+        try:
+            try:
+                # get the operand types and values
+                op2_type, op2_value = data.data_stack.pop()
+                op1_type, op1_value = data.data_stack.pop()
+            except:
+                raise Exception(56, 'Empty data stack')
+
+            # check operand types and other constraints
+            if op1_type == 'bool' and  op2_type == 'bool':
+
+                # perform the operation
+                if op1_value == 'true' or op2_value == 'true': result = 'true'
+                else: result = 'false'
+            elif op1_type == None or op2_type == None:
+                raise Exception(56, 'Uninitialized symbol')
+            else:
+                raise Exception(53, 'Operands incompatible for logical operation')
+
+            # push the result back onto the stack
+            data.data_stack.append(('bool', result))
+
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'ORS: ' + msg)
+
+    @staticmethod
     def NOT(data):
         try:
             # get the operand type and value
@@ -452,6 +702,30 @@ class Operations:
             raise Exception(retcode, 'NOT: ' + msg)
 
     @staticmethod
+    def NOTS(data):
+        try:
+            # get the operand type and value
+            try: op_type, op_value = data.data_stack.pop()
+            except: raise Exception(56, 'Empty data stack')
+
+            # check operand types and other constraints
+            if op_type == 'bool':
+
+                # perform the operation
+                result = 'false' if op_value == 'true' else 'true'
+            elif op_type == None:
+                raise Exception(56, 'Uninitialized symbol')
+            else:
+                raise Exception(53, 'Operands incompatible for logical operation')
+
+            # push the result back onto the stack
+            data.data_stack.append(('bool', result))
+
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'NOTS: ' + msg)
+
+    @staticmethod
     def INT2CHAR(data):
         try:
             # get the operand type and value
@@ -472,6 +746,29 @@ class Operations:
         except Exception as e:
             retcode, msg = e.args
             raise Exception(retcode, 'INT2CHAR: ' + msg)
+
+    @staticmethod
+    def INT2CHARS(data):
+        try:
+            # get the operand type and value
+            try: op_type, op_value = data.data_stack.pop()
+            except: raise Exception(56, 'Empty data stack')
+
+            # check operand types and other constraints
+            if op_type == 'int':
+                try: char = chr(op_value)
+                except: raise Exception(58, 'Invalid ordinal value')
+            elif op_type == None:
+                raise Exception(56, 'Uninitialized symbol')
+            else:
+                raise Exception(53, 'Second operand has to be an integer')
+
+            # push the result back onto the stack
+            data.data_stack.append(('string', char))
+
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'INT2CHARS: ' + msg)
 
     @staticmethod
     def STRI2INT(data):
@@ -497,6 +794,35 @@ class Operations:
         except Exception as e:
             retcode, msg = e.args
             raise Exception(retcode, 'STRI2INT: ' + msg)
+
+    @staticmethod
+    def STRI2INTS(data):
+        try:
+            try:
+                # get the operand types and values
+                op2_type, op2_value = data.data_stack.pop()
+                op1_type, op1_value = data.data_stack.pop()
+            except:
+                raise Exception(56, 'Empty data stack')
+
+            # check the operand types and store the char present on the specified position
+            if op1_type == 'string' and op2_type == 'int':
+                limit = len(op1_value)
+
+                if not (0 <= op2_value < limit):
+                    raise Exception(58, 'Index out of range')
+
+                # push the result back onto the stack
+                data.data_stack.append(('int', ord(op1_value[op2_value])))
+
+            elif op1_type == None or op2_type == None:
+                raise Exception(56, 'Uninitialized symbol')
+            else:
+                raise Exception(53, 'Invalid operand type')
+
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'STRI2INTS: ' + msg)
 
     # I/O
     @staticmethod
@@ -634,7 +960,7 @@ class Operations:
                 if not (0 <= op1_value < limit) or len(op2_value) == 0:
                     raise Exception(58, 'Index out of range')
 
-                var_value =  var_value[:op1_value] + op2_value[0] + var_value[op1_value+1:]
+                var_value = var_value[:op1_value] + op2_value[0] + var_value[op1_value+1:]
                 set_var_type_value(data, data.instr[0].text, 'string', var_value)
             elif op1_type == None or op2_type == None or var_type == None:
                 raise Exception(56, 'Uninitialized symbol')
@@ -711,13 +1037,54 @@ class Operations:
             if result == 'true':
                 data.ip = data.labels[label] # get the label position
                 return True
-
             else:
                 return False # let the processor know the jump will take place
 
         except Exception as e:
             retcode, msg = e.args
             raise Exception(retcode, 'JUMPIFEQ: ' + msg)
+
+    @staticmethod
+    def JUMPIFEQS(data):
+        try:
+            try:
+                # get the operand types and values
+                op2_type, op2_value = data.data_stack.pop()
+                op1_type, op1_value = data.data_stack.pop()
+            except:
+                raise Exception(56, 'Empty data stack')
+
+            # check operand types and other constraints
+            if op1_type == None or op2_type == None:
+                raise Exception(56, 'Uninitialized symbol')
+            elif op1_type == op2_type:
+
+                # perform the comparison
+                if op1_type in ['int', 'string', 'bool', 'nil']:
+                    result = 'true' if op1_value == op2_value else 'false'
+                else:
+                    raise Exception(53, 'Operands incompatible for comparison')
+
+            elif op1_type == 'nil' or op2_type == 'nil':
+                result = 'false'
+            else:
+                raise Exception(53, 'Operands incompatible for comparison')
+
+            # test the label existence
+            label = data.instr[0].text
+            if label not in data.labels:
+                raise Exception(52, f'Label "{label}" is undefined')
+
+            # perform the jump
+            if result == 'true':
+                data.ip = data.labels[label] # get the label position
+                return True
+            else:
+                return False # let the processor know the jump will take place
+
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'JUMPIFEQS: ' + msg)
 
     @staticmethod
     def JUMPIFNEQ(data):
@@ -751,13 +1118,54 @@ class Operations:
             if result == 'false':
                 data.ip = data.labels[label] # get the label position
                 return True
-
             else:
                 return False # let the processor know the jump will take place
 
         except Exception as e:
             retcode, msg = e.args
             raise Exception(retcode, 'JUMPIFNEQ: ' + msg)
+
+    @staticmethod
+    def JUMPIFNEQS(data):
+        try:
+            try:
+                # get the operand types and values
+                op2_type, op2_value = data.data_stack.pop()
+                op1_type, op1_value = data.data_stack.pop()
+            except:
+                raise Exception(56, 'Empty data stack')
+
+            # check operand types and other constraints
+            if op1_type == None or op2_type == None:
+                raise Exception(56, 'Uninitialized symbol')
+            if op1_type == op2_type:
+
+                # perform the comparison
+                if op1_type in ['int', 'string', 'bool', 'nil']:
+                    result = 'true' if op1_value == op2_value else 'false'
+                else:
+                    raise Exception(53, 'Operands incompatible for comparison')
+
+            elif op1_type == 'nil' or op2_type == 'nil':
+                result = 'false'
+            else:
+                raise Exception(53, 'Operands incompatible for comparison')
+
+            # test the label existence
+            label = data.instr[0].text
+            if label not in data.labels:
+                raise Exception(52, f'Label "{label}" is undefined')
+
+            # perform the jump
+            if result == 'false':
+                data.ip = data.labels[label] # get the label position
+                return True
+            else:
+                return False # let the processor know the jump will take place
+
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'JUMPIFNEQS: ' + msg)
 
     @staticmethod
     def EXIT(data):

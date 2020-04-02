@@ -28,7 +28,8 @@ input_file = None
 for opt, val in args:
     if opt == '--help':
         if len(args) == 1: # print help
-            print('Program načte XML reprezentaci programu a tento program s využitím vstupu dle parametrů příkazové řádky interpretuje a generuje výstup.')
+            print('Program načte XML reprezentaci programu a tento program s využitím '
+                  'vstupu dle parametrů příkazové řádky interpretuje a generuje výstup.')
             sys.exit(0)
         else:
             sys.stderr.write('Invalid argument combination passed to the script\n')

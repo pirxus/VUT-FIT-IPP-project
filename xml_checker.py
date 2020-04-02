@@ -59,7 +59,7 @@ def check_instruction(instr):
                 return True
         raise Exception(f'Invalid {opcode} attributes', instr.attrib['order'])
 
-    elif opcode in ['CALL', 'LABEL', 'JUMP']: # label
+    elif opcode in ['CALL', 'LABEL', 'JUMP', 'JUMPIFEQS', 'JUMPIFNEQS']: # label
         if len(instr) == 1 and instr[0].tag == 'arg1':
             if ArgChecks.check_label(instr[0]):
                 return True
@@ -88,7 +88,9 @@ def check_instruction(instr):
                 return True
         raise Exception(f'Invalid {opcode} attributes', instr.attrib['order'])
 
-    elif opcode in ['CREATEFRAME', 'PUSHFRAME', 'POPFRAME', 'RETURN', 'BREAK']: # ...
+    elif opcode in ['CREATEFRAME', 'PUSHFRAME', 'POPFRAME', 'RETURN', 'BREAK', 'CLEARS',
+                    'ADDS', 'SUBS', 'MULS', 'IDIVS', 'LTS', 'GTS', 'EQS', 'ANDS', 'ORS',
+                    'NOTS', 'INT2CHARS', 'STRI2INTS']: # ...
         if len(instr) == 0:
             return True
         raise Exception(f'Invalid {opcode} attributes', instr.attrib['order'])

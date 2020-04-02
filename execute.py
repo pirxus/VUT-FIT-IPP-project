@@ -56,31 +56,57 @@ class Processor:
                 op.PUSHS(self)
             elif opcode == 'POPS':
                 op.POPS(self)
+            elif opcode == 'CLEARS':
+                op.CLEARS(self)
             #####################
             elif opcode == 'ADD':
                 op.ADD(self)
+            elif opcode == 'ADDS':
+                op.ADDS(self)
             elif opcode == 'SUB':
                 op.SUB(self)
+            elif opcode == 'SUBS':
+                op.SUBS(self)
             elif opcode == 'MUL':
                 op.MUL(self)
+            elif opcode == 'MULS':
+                op.MULS(self)
             elif opcode == 'IDIV':
                 op.IDIV(self)
+            elif opcode == 'IDIVS':
+                op.IDIVS(self)
             elif opcode == 'LT':
                 op.LT(self)
+            elif opcode == 'LTS':
+                op.LTS(self)
             elif opcode == 'GT':
                 op.GT(self)
+            elif opcode == 'GTS':
+                op.GTS(self)
             elif opcode == 'EQ':
                 op.EQ(self)
+            elif opcode == 'EQS':
+                op.EQS(self)
             elif opcode == 'AND':
                 op.AND(self)
+            elif opcode == 'ANDS':
+                op.ANDS(self)
             elif opcode == 'OR':
                 op.OR(self)
+            elif opcode == 'ORS':
+                op.ORS(self)
             elif opcode == 'NOT':
                 op.NOT(self)
+            elif opcode == 'NOTS':
+                op.NOTS(self)
             elif opcode == 'INT2CHAR':
                 op.INT2CHAR(self)
+            elif opcode == 'INT2CHARS':
+                op.INT2CHARS(self)
             elif opcode == 'STRI2INT':
                 op.STRI2INT(self)
+            elif opcode == 'STRI2INTS':
+                op.STRI2INTS(self)
             #####################
             elif opcode == 'READ':
                 op.READ(self)
@@ -98,15 +124,19 @@ class Processor:
             #####################
             elif opcode == 'TYPE':
                 op.TYPE(self)
-            ##################### TODO: rework these following...
+            #####################
             elif opcode == 'LABEL':
                 op.LABEL()
             elif opcode == 'JUMP':
                 op.JUMP(self); return
             elif opcode == 'JUMPIFEQ':
                 if op.JUMPIFEQ(self): return
+            elif opcode == 'JUMPIFEQS':
+                if op.JUMPIFEQS(self): return
             elif opcode == 'JUMPIFNEQ':
                 if op.JUMPIFNEQ(self): return
+            elif opcode == 'JUMPIFNEQS':
+                if op.JUMPIFNEQS(self): return
             elif opcode == 'EXIT':
                 retcode = op.EXIT(self); sys.exit(retcode)
             #####################
