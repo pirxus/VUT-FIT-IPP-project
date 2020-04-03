@@ -139,6 +139,8 @@ def order_instructions(root):
     return root
 
 
+# This function encapsulates the whole parsing process and is called from the main
+# interpreter module
 def check_syntax(program):
     if (program.tag != 'program' or 'language' not in program.attrib or
             program.attrib['language'] != 'IPPcode20' or

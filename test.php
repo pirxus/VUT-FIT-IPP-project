@@ -12,10 +12,9 @@ define("ERROR", 1);
 
 /* _____ main _____ */
 
-/* parse the program arguments and set up corresponding flags in the newly created
- * test class object */
-
+/* Create a new Test object */
 $test = new Test($argv);
+/* Start the testing process */
 $test->start_test();
 $test->end_test();
 exit(SUCCESS);
@@ -23,7 +22,8 @@ exit(SUCCESS);
 /* _____ end of main _____ */
 
 /* This class holds all the necessary information about the testing process,
- * the flags set to direct the process etc.. */
+ * the flags set to direct the process etc.. Also, it is responsible for the testing
+ * process as a whole. */
 class Test {
 
     public $directory;
@@ -111,7 +111,8 @@ class Test {
                                 $fail = True;
                                 $rc_expected = 0;
                                 $message = 'parsing failed';
-                            } else { // FIXME
+
+                            } else { // proceed with the interpretation
                                 exec('php '.$this->parser.' <'.$path.$file.' | python3 '.$this->interpreter.' --input='.$path.substr($file, 0, -4).'.in'.' >'.$tmp_out. ' 2>'.'/dev/null', $output, $rc_actual);
                                 $fail = False;
                             }
@@ -254,6 +255,7 @@ class Test {
     }
 }
 
+/* This class handles the html generating process */
 class HTMLgen {
     private $out;
     private $passed;
@@ -362,5 +364,4 @@ function parse_args($argv) {
 
     return $flags;
 }
-
 ?>
