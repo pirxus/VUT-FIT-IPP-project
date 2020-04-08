@@ -280,7 +280,7 @@ class HTMLgen {
 
     /* End the html output */
     public function end_html() {
-        fprintf(STDOUT, "</tbody>\n</table>\n<p>Total tests run: %d</p>\n<p>PASSED: %d</p>\n<p>FAILED: %d</p>\n</body>\n</html>",
+        fprintf(STDOUT, "</tbody>\n</table>\n<p>Total tests run: %d</p>\n<p>PASSED: %d</p>\n<p>FAILED: %d</p>\n</body>\n</html>\n",
                $this->passed + $this->failed, $this->passed, $this->failed) or exit(99);
     }
 }
