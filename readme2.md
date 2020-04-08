@@ -64,7 +64,7 @@ který je používán pro kontrolu výstupu parse.php).
 Skript test.php obsahuje dvě třídy: Test a HTMLgen.
 
 Třída HTMLgen obsahuje několik metod pro generování html dokumentu s výsledy testů,
-tento dokument se po skončení procesu testování nachází v souboru index.html.
+tento dokument je v průběhu testování tisknut na standardní výstup.
 
 Třída Test je ústřední strukturou skriptu a má za úkol řídit celý proces testování,
 dává pokyny pro generování html.

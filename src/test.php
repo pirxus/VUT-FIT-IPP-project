@@ -257,16 +257,15 @@ class Test {
 
 /* This class handles the html generating process */
 class HTMLgen {
-    private $out;
     private $passed;
     private $failed;
 
     public function HTMLgen($out, $test_mode) {
-        $this->out = fopen($out, 'w') or exit(12); /* open the output html file */
         /* set up the wep page */
-        fprintf($this->out, '<!DOCTYPE html><html lang="en"><head><h1>IPP20 TEST RESULTS</h1><h2>Test mode: %s</h2></head><style>table, th, td {border: 1px solid black;}</style><body><table class="testResultTable"><tbody><tr><th><strong>Test</strong></th><th><strong>Expected return code</strong></th><th><strong>Actual return code</strong></th><th><strong>Output match</strong></th></tr>', $test_mode) or exit(99);
+        fprintf(STDOUT, "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<h1>IPP20 TEST RESULTS</h1>\n<h2>Test mode: %s</h2>\n</head>\n<style>\ntable, th, td {\nborder: 1px solid black;\n}\n</style>\n<body>\n<table class=\"testResultTable\">\n<tbody>\n<tr>\n<th><strong>Test</strong></th>\n<th><strong>Expected return code</strong></th>\n<th><strong>Actual return code</strong></th>\n<th><strong>Output match</strong></th>\n</tr>\n", $test_mode) or exit(99);
     }
 
+    /* Prints the result of one test */
     public function add_test_row($passed, $test, $rc_expected, $rc_actual, $output_match) {
         if ($passed) {
             $color = "#7FFF00";
@@ -275,14 +274,14 @@ class HTMLgen {
             $color = "#DC143C";
             $this->failed++;
         }
-        fprintf($this->out, '<tr style="background-color:%s"><td>%s</td><td style="text-align:center">%d</td><td style="text-align:center">%d</td><td style="text-align:center">%s</td></tr>',
+        fprintf(STDOUT, "<tr style=\"background-color:%s\">\n<td>%s</td>\n<td style=\"text-align:center\">%d</td>\n<td style=\"text-align:center\">%d</td>\n<td style=\"text-align:center\">%s</td>\n</tr>\n",
                 $color, $test, $rc_expected, $rc_actual, $output_match) or exit(99);
     }
 
+    /* End the html output */
     public function end_html() {
-        fprintf($this->out, '</tbody></table><p>Total tests run: %d</p> <p>PASSED: %d</p><p>FAILED: %d</p></body></html>',
+        fprintf(STDOUT, "</tbody>\n</table>\n<p>Total tests run: %d</p>\n<p>PASSED: %d</p>\n<p>FAILED: %d</p>\n</body>\n</html>",
                $this->passed + $this->failed, $this->passed, $this->failed) or exit(99);
-        fclose($this->out);
     }
 }
 
@@ -303,7 +302,7 @@ function parse_args($argv) {
         "parse-only" => False,
         "int-only" => False,
         //"jexamxml" => '/pub/courses/ipp/jexamxml/jexamxml.jar',
-        "jexamxml" => '../jexamxml/jexamxml.jar',
+        "jexamxml" => '../../jexamxml/jexamxml.jar',
     );
 
     $options = getopt("", $opts);
