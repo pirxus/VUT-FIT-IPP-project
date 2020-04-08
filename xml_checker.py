@@ -41,7 +41,8 @@ def check_instruction(instr):
     # before checking the arguments, sort the in ascending order (arg1, arg2, ...)
     instr[:] = sorted(instr, key=lambda child: child.tag)
 
-    if opcode in ['MOVE', 'NOT', 'INT2CHAR', 'STRLEN', 'TYPE']: # var, symb
+    if opcode in ['MOVE', 'NOT', 'INT2CHAR', 'STRLEN', 'TYPE', 'INT2FLOAT',
+                  'FLOAT2INT']: # var, symb
         if len(instr) == 2 and instr[0].tag == 'arg1' and instr[1].tag == 'arg2':
             if ArgChecks.check_var(instr[0]) and ArgChecks.check_symbol(instr[1]):
                 return True
@@ -65,7 +66,7 @@ def check_instruction(instr):
                 return True
         raise Exception(f'Invalid {opcode} attributes', instr.attrib['order'])
 
-    elif opcode in ['ADD', 'SUB', 'MUL', 'IDIV', 'LT','GT', 'EQ',
+    elif opcode in ['ADD', 'SUB', 'MUL', 'IDIV', 'DIV','LT','GT', 'EQ',
             'AND', 'OR', 'STRI2INT', 'CONCAT', 'GETCHAR', 'SETCHAR']: # var, symb, symb
         if (len(instr) == 3 and instr[0].tag == 'arg1' and
                 instr[1].tag == 'arg2' and instr[2].tag == 'arg3'):
@@ -89,8 +90,9 @@ def check_instruction(instr):
         raise Exception(f'Invalid {opcode} attributes', instr.attrib['order'])
 
     elif opcode in ['CREATEFRAME', 'PUSHFRAME', 'POPFRAME', 'RETURN', 'BREAK', 'CLEARS',
-                    'ADDS', 'SUBS', 'MULS', 'IDIVS', 'LTS', 'GTS', 'EQS', 'ANDS', 'ORS',
-                    'NOTS', 'INT2CHARS', 'STRI2INTS']: # ...
+                    'ADDS', 'SUBS', 'MULS', 'IDIVS', 'DIVS', 'LTS', 'GTS', 'EQS', 'ANDS',
+                    'ORS', 'NOTS', 'INT2CHARS', 'STRI2INTS', 'INT2FLOATS',
+                    'FLOAT2INTS']: # ...
         if len(instr) == 0:
             return True
         raise Exception(f'Invalid {opcode} attributes', instr.attrib['order'])
@@ -174,6 +176,15 @@ class ArgChecks:
         return False
 
     @staticmethod
+    def check_arg_float(arg):
+        if (len(arg.attrib) == 1 and 'type' in arg.attrib and
+                arg.attrib['type'] == 'float'):
+            try: arg.text = float.fromhex(arg.text)
+            except: return False # not a valid float
+            return True
+        return False
+
+    @staticmethod
     def check_arg_string(arg):
         if (len(arg.attrib) == 1 and 'type' in arg.attrib and
                 arg.attrib['type'] == 'string'):
@@ -213,7 +224,7 @@ class ArgChecks:
     def check_arg_type(arg):
         if (len(arg.attrib) == 1 and 'type' in arg.attrib and
                 arg.attrib['type'] == 'type'):
-            if arg.text not in ['int', 'string', 'bool']:
+            if arg.text not in ['int', 'string', 'bool', 'float']:
                 return False # not a valid type specification
             return True
         return False
@@ -234,6 +245,7 @@ class ArgChecks:
         # a symbol is a variable or a literal...
         if (ArgChecks.check_var(symbol) or 
                 ArgChecks.check_arg_int(symbol) or
+                ArgChecks.check_arg_float(symbol) or
                 ArgChecks.check_arg_string(symbol) or
                 ArgChecks.check_arg_nil(symbol) or
                 ArgChecks.check_arg_bool(symbol)):

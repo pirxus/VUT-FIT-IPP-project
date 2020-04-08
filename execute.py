@@ -75,6 +75,10 @@ class Processor:
                 op.IDIV(self)
             elif opcode == 'IDIVS':
                 op.IDIVS(self)
+            elif opcode == 'DIV':
+                op.DIV(self)
+            elif opcode == 'DIVS':
+                op.DIV(self)
             elif opcode == 'LT':
                 op.LT(self)
             elif opcode == 'LTS':
@@ -107,6 +111,14 @@ class Processor:
                 op.STRI2INT(self)
             elif opcode == 'STRI2INTS':
                 op.STRI2INTS(self)
+            elif opcode == 'INT2FLOAT':
+                op.INT2FLOAT(self)
+            elif opcode == 'FLOAT2INT':
+                op.FLOAT2INT(self)
+            elif opcode == 'INT2FLOATS':
+                op.INT2FLOAT(self)
+            elif opcode == 'FLOAT2INTS':
+                op.FLOAT2INT(self)
             #####################
             elif opcode == 'READ':
                 op.READ(self)

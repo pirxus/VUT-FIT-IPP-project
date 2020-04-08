@@ -220,13 +220,15 @@ class Operations:
             op2_type, op2_value = get_symbol_type_value(data, data.instr[2])
 
             # check operand types
-            if op1_type == 'int' and op2_type == 'int':
+            if ((op1_type == 'int' and op2_type == 'int') or
+                    (op1_type == 'float' and op2_type == 'float')):
                 # write the result of the operation
-                set_var_type_value(data, data.instr[0].text, 'int', op1_value + op2_value) 
+                set_var_type_value(data, data.instr[0].text, op1_type,
+                        op1_value + op2_value) 
             elif op1_type == None or op2_type == None:
                 raise Exception(56, 'Uninitialized symbol')
             else:
-                raise Exception(53, 'Both operands must be of type "int"')
+                raise Exception(53, 'Both operands must be of type "int" or "float"')
 
         except Exception as e:
             retcode, msg = e.args
@@ -243,13 +245,14 @@ class Operations:
                 raise Exception(56, 'Empty data stack')
 
             # check operand types
-            if op1_type == 'int' and op2_type == 'int':
+            if ((op1_type == 'int' and op2_type == 'int') or
+                    (op1_type == 'float' and op2_type == 'float')):
                 # ... and push the result of the operation onto the data stack
                 data.data_stack.append((op1_type, op1_value + op2_value))
             elif op1_type == None or op2_type == None: # this should probably not happen..
                 raise Exception(56, 'Uninitialized symbol')
             else:
-                raise Exception(53, 'Both operands must be of type "int"')
+                raise Exception(53, 'Both operands must be of type "int" or "float"')
 
         except Exception as e:
             retcode, msg = e.args
@@ -263,13 +266,15 @@ class Operations:
             op2_type, op2_value = get_symbol_type_value(data, data.instr[2])
 
             # check operand types
-            if op1_type == 'int' and op2_type == 'int':
+            if ((op1_type == 'int' and op2_type == 'int') or
+                    (op1_type == 'float' and op2_type == 'float')):
                 # write the result of the operation
-                set_var_type_value(data, data.instr[0].text, 'int', op1_value - op2_value) 
+                set_var_type_value(data, data.instr[0].text, op1_type,
+                        op1_value - op2_value) 
             elif op1_type == None or op2_type == None:
                 raise Exception(56, 'Uninitialized symbol')
             else:
-                raise Exception(53, 'Both operands must be of type "int"')
+                raise Exception(53, 'Both operands must be of type "int" or "float"')
 
         except Exception as e:
             retcode, msg = e.args
@@ -286,13 +291,14 @@ class Operations:
                 raise Exception(56, 'Empty data stack')
 
             # check operand types
-            if op1_type == 'int' and op2_type == 'int':
+            if ((op1_type == 'int' and op2_type == 'int') or
+                    (op1_type == 'float' and op2_type == 'float')):
                 # ... and push the result of the operation onto the data stack
                 data.data_stack.append((op1_type, op1_value - op2_value))
             elif op1_type == None or op2_type == None: # this should probably not happen..
                 raise Exception(56, 'Uninitialized symbol')
             else:
-                raise Exception(53, 'Both operands must be of type "int"')
+                raise Exception(53, 'Both operands must be of type "int" or "float"')
 
         except Exception as e:
             retcode, msg = e.args
@@ -306,13 +312,15 @@ class Operations:
             op2_type, op2_value = get_symbol_type_value(data, data.instr[2])
 
             # check operand types
-            if op1_type == 'int' and op2_type == 'int':
+            if ((op1_type == 'int' and op2_type == 'int') or
+                    (op1_type == 'float' and op2_type == 'float')):
                 # write the result of the operation
-                set_var_type_value(data, data.instr[0].text, 'int', op1_value * op2_value) 
+                set_var_type_value(data, data.instr[0].text, op1_type,
+                        op1_value * op2_value) 
             elif op1_type == None or op2_type == None:
                 raise Exception(56, 'Uninitialized symbol')
             else:
-                raise Exception(53, 'Both operands must be of type "int"')
+                raise Exception(53, 'Both operands must be of type "int" or "float"')
 
         except Exception as e:
             retcode, msg = e.args
@@ -329,13 +337,14 @@ class Operations:
                 raise Exception(56, 'Empty data stack')
 
             # check operand types
-            if op1_type == 'int' and op2_type == 'int':
+            if ((op1_type == 'int' and op2_type == 'int') or
+                    (op1_type == 'float' and op2_type == 'float')):
                 # ... and push the result of the operation onto the data stack
                 data.data_stack.append((op1_type, op1_value * op2_value))
             elif op1_type == None or op2_type == None: # this should probably not happen..
                 raise Exception(56, 'Uninitialized symbol')
             else:
-                raise Exception(53, 'Both operands must be of type "int"')
+                raise Exception(53, 'Both operands must be of type "int" or "float"')
 
         except Exception as e:
             retcode, msg = e.args
@@ -353,12 +362,12 @@ class Operations:
                 if op2_value == 0:
                     raise Exception(57, 'Division by zero')
                 # write the result of the operation
-                set_var_type_value(data, data.instr[0].text, 'int', op1_value // op2_value) 
+                set_var_type_value(data, data.instr[0].text, 'int',
+                        op1_value // op2_value) 
             elif op1_type == None or op2_type == None:
                 raise Exception(56, 'Uninitialized symbol')
             else:
                 raise Exception(53, 'Both operands must be of type "int"')
-
 
         except Exception as e:
             retcode, msg = e.args
@@ -388,6 +397,54 @@ class Operations:
             raise Exception(retcode, 'IDIVS: ' + msg)
 
     @staticmethod
+    def DIV(data):
+        try:
+            # get the operand types and values
+            op1_type, op1_value = get_symbol_type_value(data, data.instr[1])
+            op2_type, op2_value = get_symbol_type_value(data, data.instr[2])
+
+            # check operand types and other constraints
+            if op1_type == 'float' and op2_type == 'float':
+                if op2_value == 0:
+                    raise Exception(57, 'Division by zero')
+                # write the result of the operation
+                set_var_type_value(data, data.instr[0].text, 'float',
+                        op1_value / op2_value) 
+            elif op1_type == None or op2_type == None:
+                raise Exception(56, 'Uninitialized symbol')
+            else:
+                raise Exception(53, 'Both operands must be of type "float"')
+
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'DIV: ' + msg)
+
+    @staticmethod
+    def DIVS(data):
+        try:
+            try:
+                # get the operand types and values
+                op2_type, op2_value = data.data_stack.pop()
+                op1_type, op1_value = data.data_stack.pop()
+            except:
+                raise Exception(56, 'Empty data stack')
+
+            # check operand types and other constraints
+            if op1_type == 'float' and op2_type == 'float':
+                if op2_value == 0:
+                    raise Exception(57, 'Division by zero')
+                # write the result of the operation
+                data.data_stack.append((op1_type, op1_value / op2_value))
+            elif op1_type == None or op2_type == None:
+                raise Exception(56, 'Uninitialized symbol')
+            else:
+                raise Exception(53, 'Both operands must be of type "float"')
+
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'DIVS: ' + msg)
+
+    @staticmethod
     def LT(data):
         try:
             # get the operand types and values
@@ -399,7 +456,7 @@ class Operations:
                 raise Exception(56, 'Uninitialized symbol')
             elif op1_type == op2_type and op1_type != 'nil':
                 # perform the comparison
-                if op1_type in ['int', 'string']:
+                if op1_type in ['int', 'string', 'float']:
                     result = 'true' if op1_value < op2_value else 'false'
                 elif op1_type == 'bool':
                     if op1_value == 'false' and op2_value == 'true': result = 'true'
@@ -431,7 +488,7 @@ class Operations:
                 raise Exception(56, 'Uninitialized symbol')
             elif op1_type == op2_type and op1_type != 'nil':
                 # perform the comparison
-                if op1_type in ['int', 'string']:
+                if op1_type in ['int', 'string', 'float']:
                     result = 'true' if op1_value < op2_value else 'false'
                 elif op1_type == 'bool':
                     if op1_value == 'false' and op2_value == 'true': result = 'true'
@@ -460,7 +517,7 @@ class Operations:
                 raise Exception(56, 'Uninitialized symbol')
             elif op1_type == op2_type and op1_type != 'nil':
                 # perform the comparison
-                if op1_type in ['int', 'string']:
+                if op1_type in ['int', 'string', 'float']:
                     result = 'true' if op1_value > op2_value else 'false'
                 elif op1_type == 'bool':
                     if op1_value == 'true' and op2_value == 'false': result = 'true'
@@ -492,7 +549,7 @@ class Operations:
                 raise Exception(56, 'Uninitialized symbol')
             elif op1_type == op2_type and op1_type != 'nil':
                 # perform the comparison
-                if op1_type in ['int', 'string']:
+                if op1_type in ['int', 'string', 'float']:
                     result = 'true' if op1_value > op2_value else 'false'
                 elif op1_type == 'bool':
                     if op1_value == 'true' and op2_value == 'false': result = 'true'
@@ -522,7 +579,7 @@ class Operations:
             if op1_type == op2_type:
 
                 # perform the comparison
-                if op1_type in ['int', 'string', 'bool', 'nil']:
+                if op1_type in ['int', 'string', 'bool', 'nil', 'float']:
                     result = 'true' if op1_value == op2_value else 'false'
                 else:
                     raise Exception(53, 'Operands incompatible for comparison')
@@ -555,7 +612,7 @@ class Operations:
             if op1_type == op2_type:
 
                 # perform the comparison
-                if op1_type in ['int', 'string', 'bool', 'nil']:
+                if op1_type in ['int', 'string', 'bool', 'nil', 'float']:
                     result = 'true' if op1_value == op2_value else 'false'
                 else:
                     raise Exception(53, 'Operands incompatible for comparison')
@@ -824,6 +881,96 @@ class Operations:
             retcode, msg = e.args
             raise Exception(retcode, 'STRI2INTS: ' + msg)
 
+    @staticmethod
+    def INT2FLOAT(data):
+        try:
+            # get the operand type and value
+            op_type, op_value = get_symbol_type_value(data, data.instr[1])
+
+            # check operand types and other constraints
+            if op_type == 'int':
+                try: result = float(op_value)
+                except: raise Exception(58, 'Could not convert int to float')
+            elif op_type == None:
+                raise Exception(56, 'Uninitialized symbol')
+            else:
+                raise Exception(53, 'Second operand has to be an integer')
+
+            # write the result of the operation
+            set_var_type_value(data, data.instr[0].text, 'float', result)
+
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'INT2FLOAT: ' + msg)
+
+    @staticmethod
+    def INT2FLOATS(data):
+        try:
+            # get the operand type and value
+            try: op_type, op_value = data.data_stack.pop()
+            except: raise Exception(56, 'Empty data stack')
+
+            # check operand types and other constraints
+            if op_type == 'int':
+                try: result = float(op_value)
+                except: raise Exception(58, 'Could not convert int to float')
+            elif op_type == None:
+                raise Exception(56, 'Uninitialized symbol')
+            else:
+                raise Exception(53, 'Second operand has to be an integer')
+
+            # push the result back onto the stack
+            data.data_stack.append(('float', result))
+
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'INT2FLOATS: ' + msg)
+
+    @staticmethod
+    def FLOAT2INT(data):
+        try:
+            # get the operand type and value
+            op_type, op_value = get_symbol_type_value(data, data.instr[1])
+
+            # check operand types and other constraints
+            if op_type == 'float':
+                try: result = int(op_value)
+                except: raise Exception(58, 'Could not convert float to int')
+            elif op_type == None:
+                raise Exception(56, 'Uninitialized symbol')
+            else:
+                raise Exception(53, 'Second operand has to be a float')
+
+            # write the result of the operation
+            set_var_type_value(data, data.instr[0].text, 'int', result)
+
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'FLOAT2INT: ' + msg)
+
+    @staticmethod
+    def FLOAT2INTS(data):
+        try:
+            # get the operand type and value
+            try: op_type, op_value = data.data_stack.pop()
+            except: raise Exception(56, 'Empty data stack')
+
+            # check operand types and other constraints
+            if op_type == 'float':
+                try: result = int(op_value)
+                except: raise Exception(58, 'Could not convert float to int')
+            elif op_type == None:
+                raise Exception(56, 'Uninitialized symbol')
+            else:
+                raise Exception(53, 'Second operand has to be a float')
+
+            # push the result back onto the stack
+            data.data_stack.append(('int', result))
+
+        except Exception as e:
+            retcode, msg = e.args
+            raise Exception(retcode, 'FLOAT2INTS: ' + msg)
+
     # I/O
     @staticmethod
     def READ(data):
@@ -832,7 +979,7 @@ class Operations:
             op_type, op_value = get_symbol_type_value(data, data.instr[1])
 
             # check the operand types and store the char present on the specified position
-            if op_type == 'type' and op_value in ['int', 'string', 'bool']:
+            if op_type == 'type' and op_value in ['int', 'string', 'bool', 'float']:
                 read = data.input_file.readline() # read one line of input
                 if read == '':
                     op_value = 'nil'
@@ -840,13 +987,13 @@ class Operations:
                 else:
                     if read[-1] == '\n': read = read[:-1] # cut the trailing newline
                     if op_value == 'int':
-                        try:
-                            read = int(read)
-                        except:
-                            read = 'nil'
-                            op_value = 'nil'
+                        try: read = int(read)
+                        except: read = 'nil'; op_value = 'nil'
                     elif op_value == 'string':
                         read = str(read)
+                    elif op_value == 'float':
+                        try: read = float.fromhex(read)
+                        except: read = 'nil'; op_value = 'nil'
                     else: # bool
                         if read.casefold() == 'true': read = 'true'
                         else: read = 'false'
@@ -868,6 +1015,8 @@ class Operations:
                 op_value = ''
             elif op_type in ['int', 'string', 'bool']:
                 pass
+            elif op_type == 'float': # convert floats back to hexa
+                op_value = float.hex(op_value)
             elif op_type == None:
                 raise Exception(56, 'Uninitialized symbol')
             else:
@@ -979,7 +1128,7 @@ class Operations:
             if op_type == None or op_value == None:
                 op_value = ''
                 op_type = 'string'
-            elif op_type in ['int', 'string', 'bool', 'nil']:
+            elif op_type in ['int', 'string', 'bool', 'nil', 'float']:
                 op_value = op_type
                 op_type = 'string'
             else:
@@ -1018,7 +1167,7 @@ class Operations:
             elif op1_type == op2_type:
 
                 # perform the comparison
-                if op1_type in ['int', 'string', 'bool', 'nil']:
+                if op1_type in ['int', 'string', 'bool', 'nil', 'float']:
                     result = 'true' if op1_value == op2_value else 'false'
                 else:
                     raise Exception(53, 'Operands incompatible for comparison')
@@ -1060,7 +1209,7 @@ class Operations:
             elif op1_type == op2_type:
 
                 # perform the comparison
-                if op1_type in ['int', 'string', 'bool', 'nil']:
+                if op1_type in ['int', 'string', 'bool', 'nil', 'float']:
                     result = 'true' if op1_value == op2_value else 'false'
                 else:
                     raise Exception(53, 'Operands incompatible for comparison')
@@ -1099,7 +1248,7 @@ class Operations:
             if op1_type == op2_type:
 
                 # perform the comparison
-                if op1_type in ['int', 'string', 'bool', 'nil']:
+                if op1_type in ['int', 'string', 'bool', 'nil', 'float']:
                     result = 'true' if op1_value == op2_value else 'false'
                 else:
                     raise Exception(53, 'Operands incompatible for comparison')
@@ -1141,7 +1290,7 @@ class Operations:
             if op1_type == op2_type:
 
                 # perform the comparison
-                if op1_type in ['int', 'string', 'bool', 'nil']:
+                if op1_type in ['int', 'string', 'bool', 'nil', 'float']:
                     result = 'true' if op1_value == op2_value else 'false'
                 else:
                     raise Exception(53, 'Operands incompatible for comparison')
