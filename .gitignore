@@ -2,7 +2,6 @@ tests/
 *.txt
 input*
 output
-readme*
 index.html
 
 # Byte-compiled / optimized / DLL files
