@@ -102,18 +102,18 @@ class Test {
 
                         /* run the test */
                         if ($this->parse_only) { // parse only
-                            exec('php '.$this->parser.' <'.$path.$file.' >'.$tmp_out. ' 2>'.'/dev/null', $output, $rc_actual);
+                            exec('php7.4 '.$this->parser.' <'.$path.$file.' >'.$tmp_out. ' 2>'.'/dev/null', $output, $rc_actual);
                         } else if ($this->int_only) { // int only
                             exec('python3 '.$this->interpreter.' --source='.$path.$file.' --input='.$path.substr($file, 0, -4).'.in'.' >'.$tmp_out. ' 2>'.'/dev/null', $output, $rc_actual);
                         } else { // both
-                            exec('php '.$this->parser.' <'.$path.$file.' >'.$tmp_out. ' 2>'.'/dev/null', $output, $rc_actual);
+                            exec('php7.4 '.$this->parser.' <'.$path.$file.' >'.$tmp_out. ' 2>'.'/dev/null', $output, $rc_actual);
                             if ($rc_actual != 0) {
                                 $fail = True;
                                 $rc_expected = 0;
                                 $message = 'parsing failed';
 
                             } else { // proceed with the interpretation
-                                exec('php '.$this->parser.' <'.$path.$file.' | python3 '.$this->interpreter.' --input='.$path.substr($file, 0, -4).'.in'.' >'.$tmp_out. ' 2>'.'/dev/null', $output, $rc_actual);
+                                exec('php7.4 '.$this->parser.' <'.$path.$file.' | python3 '.$this->interpreter.' --input='.$path.substr($file, 0, -4).'.in'.' >'.$tmp_out. ' 2>'.'/dev/null', $output, $rc_actual);
                                 $fail = False;
                             }
                         }
@@ -301,8 +301,7 @@ function parse_args($argv) {
         "int-script" => './interpret.py',
         "parse-only" => False,
         "int-only" => False,
-        //"jexamxml" => '/pub/courses/ipp/jexamxml/jexamxml.jar',
-        "jexamxml" => '../../jexamxml/jexamxml.jar',
+        "jexamxml" => '/pub/courses/ipp/jexamxml/jexamxml.jar',
     );
 
     $options = getopt("", $opts);

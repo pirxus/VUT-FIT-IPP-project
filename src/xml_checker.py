@@ -191,8 +191,10 @@ class ArgChecks:
             if arg.text == None: # in case the text attribute is empty
                 arg.text = ''
 
+            if '#' in arg.text: return False
+
             # convert the escape sequences
-            esc_match = re.compile(r'\\[0-9]{3}')
+            esc_match = re.compile(r'\\[\S]{3}')
             match = re.findall(esc_match, arg.text)
             for esc in match:
                 try: arg.text = arg.text.replace(esc, chr(int(esc[1:])), 1)
